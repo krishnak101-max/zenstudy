@@ -219,8 +219,13 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
                 <span className="text-[12rem]">🦉</span>
               </div>
 
-              <div className="text-7xl mb-6 transform hover:scale-110 transition-transform duration-700 drop-shadow-2xl">🏆</div>
-              <h2 className="text-4xl font-black text-white mb-3 tracking-tighter">Rank: {getOrdinal(todayAttendance.rank_today)}</h2>
+              <div className="text-7xl mb-6 transform hover:scale-110 transition-transform duration-700 drop-shadow-2xl">{dailyBadge.emoji}</div>
+              <h2 className={`text-4xl font-black mb-3 tracking-tighter ${todayAttendance.rank_today === 1 ? 'text-amber-400' :
+                  todayAttendance.rank_today <= 3 ? 'text-emerald-400' :
+                    todayAttendance.rank_today <= 5 ? 'text-teal-400' :
+                      todayAttendance.rank_today <= 10 ? 'text-cyan-400' :
+                        'text-white'
+                }`}>Rank: {getOrdinal(todayAttendance.rank_today)}</h2>
 
               <div className="mb-8">
                 <p className="text-emerald-200 font-black bg-white/5 py-2 px-5 rounded-full inline-block text-[10px] uppercase tracking-widest border border-white/10 shadow-sm">
