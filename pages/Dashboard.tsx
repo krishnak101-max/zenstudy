@@ -143,8 +143,8 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
   const medalClass = `medal-${medalLevel.toLowerCase()}`;
 
   return (
-    <div className="p-6 pt-6 text-white animate-in fade-in duration-700">
-      <div className="flex justify-between items-start mb-10">
+    <div className="p-4 pt-3 text-white animate-in fade-in duration-700">
+      <div className="flex justify-between items-start mb-6">
         <div>
           <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1.5 animate-in slide-in-from-left-4 duration-500">Wings Seeker</p>
           <h1 className="text-3xl font-black text-white tracking-tight leading-none animate-in slide-in-from-left-4 duration-700 delay-100">{student?.name}</h1>
