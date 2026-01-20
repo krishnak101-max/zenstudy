@@ -181,134 +181,142 @@ const Admin: React.FC = () => {
   }
 
   return (
-    <div className="p-4 pt-3 pb-24 text-white animate-in slide-in-from-bottom-4 duration-700">
-      <div className="mb-6 flex flex-col space-y-6 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
+    <div className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-24 text-white animate-in slide-in-from-bottom-4 duration-700">
+      <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-black text-white tracking-tighter italic leading-none">ZenPanel</h1>
+          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tighter italic leading-none">ZenPanel</h1>
           <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mt-2">Administrative Control</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={exportToPDF} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-900/20 transition-all active:scale-95">PDF Export</button>
-          <button onClick={copyToppersToWhatsApp} className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-900/20 transition-all active:scale-95">Top 5</button>
-          <button onClick={copyLateToWhatsApp} className="bg-rose-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-900/20 transition-all active:scale-95">Late</button>
-          <button onClick={resetAllData} className="bg-red-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-700 shadow-lg shadow-red-900/20 transition-all active:scale-95">Reset Data</button>
-          <button onClick={() => setIsAuthenticated(false)} className="bg-white/10 text-white/50 hover:text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">Exit</button>
+          <button onClick={exportToPDF} className="bg-indigo-600 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-900/20 transition-all active:scale-95">PDF</button>
+          <button onClick={copyToppersToWhatsApp} className="bg-emerald-600 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-900/20 transition-all active:scale-95">Top 5</button>
+          <button onClick={copyLateToWhatsApp} className="bg-rose-600 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-900/20 transition-all active:scale-95">Late</button>
+          <button onClick={resetAllData} className="bg-red-600 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-700 shadow-lg shadow-red-900/20 transition-all active:scale-95">Reset</button>
+          <button onClick={() => setIsAuthenticated(false)} className="bg-white/10 text-white/50 hover:text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">Exit</button>
         </div>
       </div>
 
-      <div className="mb-10 bg-black/20 backdrop-blur-xl p-8 rounded-[3rem] border border-white/10 shadow-sm flex flex-col items-center space-y-3 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-8xl">📅</div>
-        <p className="text-[10px] font-black text-emerald-200 uppercase tracking-widest">Reporting Date</p>
-        <input
-          type="date"
-          className="px-6 py-3 rounded-2xl border border-white/10 bg-black/30 font-black text-white focus:outline-none focus:ring-4 focus:ring-emerald-500/30 transition-all cursor-pointer"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-        />
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="animate-spin h-12 w-12 border-[4px] border-emerald-500 border-t-transparent rounded-full"></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-black/20 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-sm flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-6xl">📅</div>
+          <p className="text-[10px] font-black text-emerald-200 uppercase tracking-widest">Date</p>
+          <input
+            type="date"
+            className="mt-2 px-4 py-2 rounded-xl border border-white/10 bg-black/30 font-black text-white focus:outline-none focus:ring-4 focus:ring-emerald-500/30 transition-all cursor-pointer text-sm w-full text-center"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
         </div>
-      ) : (
-        <div className="space-y-8">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-black/20 backdrop-blur-md p-8 rounded-[3.5rem] border border-white/10 shadow-sm text-center relative overflow-hidden">
-              <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-2">Total Seekers</p>
-              <p className="text-4xl font-black text-white tracking-tighter">{allStudents.length}</p>
-            </div>
-            <div className="bg-emerald-900/20 backdrop-blur-md p-8 rounded-[3.5rem] border border-emerald-500/20 text-center relative overflow-hidden">
-              <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-2">Present Today</p>
-              <p className="text-4xl font-black text-emerald-400 tracking-tighter">{allAttendance.length}</p>
-            </div>
+
+        {loading ? (
+          <div className="col-span-full flex justify-center py-10">
+            <div className="animate-spin h-10 w-10 border-[3px] border-emerald-500 border-t-transparent rounded-full"></div>
           </div>
+        ) : (
+          <>
+            <div className="bg-black/20 backdrop-blur-md p-6 rounded-[2rem] border border-white/10 shadow-sm text-center relative overflow-hidden">
+              <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-1">Total Seekers</p>
+              <p className="text-3xl font-black text-white tracking-tighter">{allStudents.length}</p>
+            </div>
+            <div className="bg-emerald-900/20 backdrop-blur-md p-6 rounded-[2rem] border border-emerald-500/20 text-center relative overflow-hidden">
+              <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-1">Present Today</p>
+              <p className="text-3xl font-black text-emerald-400 tracking-tighter">{allAttendance.length}</p>
+            </div>
+            <div className="hidden lg:block bg-rose-900/10 backdrop-blur-md p-6 rounded-[2rem] border border-rose-500/10 text-center relative overflow-hidden">
+              <p className="text-[10px] text-rose-400 font-black uppercase tracking-widest mb-1">Absent</p>
+              <p className="text-3xl font-black text-rose-400 tracking-tighter">{allStudents.length - allAttendance.length}</p>
+            </div>
+          </>
+        )}
+      </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-emerald-900/10 backdrop-blur-md p-8 rounded-[3.5rem] border border-emerald-500/10 relative overflow-hidden">
-              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-6 text-center">Top Early</p>
-              <div className="space-y-3">
+      {!loading && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-emerald-900/10 backdrop-blur-md p-6 rounded-[2rem] border border-emerald-500/10 relative overflow-hidden">
+              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4 text-center">Top Early</p>
+              <div className="space-y-2">
                 {top3.length > 0 ? top3.map((a, i) => (
-                  <div key={i} className="bg-black/20 p-3 rounded-2xl border border-white/5 text-center shadow-sm">
-                    <p className="text-[11px] font-black text-white truncate leading-tight">{a.students?.name}</p>
-                    <p className="text-[10px] font-black text-emerald-400 mt-1 tabular-nums">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <div key={i} className="bg-black/20 p-2.5 rounded-xl border border-white/5 flex justify-between items-center px-4">
+                    <p className="text-[10px] font-black text-white truncate">{a.students?.name}</p>
+                    <p className="text-[10px] font-black text-emerald-400 tabular-nums">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
-                )) : <p className="text-[11px] text-white/20 font-bold italic text-center py-4">Waiting...</p>}
+                )) : <p className="text-[10px] text-white/20 font-bold italic text-center py-2">Waiting...</p>}
               </div>
             </div>
-            <div className="bg-rose-900/10 backdrop-blur-md p-8 rounded-[3.5rem] border border-rose-500/10 relative overflow-hidden">
-              <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-6 text-center">Last Arrivals</p>
-              <div className="space-y-3">
+            <div className="bg-rose-900/10 backdrop-blur-md p-6 rounded-[2rem] border border-rose-500/10 relative overflow-hidden">
+              <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] mb-4 text-center">Last Arrivals</p>
+              <div className="space-y-2">
                 {last3.length > 0 ? last3.map((a, i) => (
-                  <div key={i} className="bg-black/20 p-3 rounded-2xl border border-white/5 text-center shadow-sm">
-                    <p className="text-[11px] font-black text-white truncate leading-tight">{a.students?.name}</p>
-                    <p className="text-[10px] font-black text-rose-400 mt-1 tabular-nums">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <div key={i} className="bg-black/20 p-2.5 rounded-xl border border-white/5 flex justify-between items-center px-4">
+                    <p className="text-[10px] font-black text-white truncate">{a.students?.name}</p>
+                    <p className="text-[10px] font-black text-rose-400 tabular-nums">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
-                )) : <p className="text-[11px] text-white/20 font-bold italic text-center py-4">Waiting...</p>}
+                )) : <p className="text-[10px] text-white/20 font-bold italic text-center py-2">Waiting...</p>}
               </div>
             </div>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div className="relative group">
               <input
                 type="text"
-                placeholder="Find seeker by name or batch..."
-                className="w-full px-8 py-6 rounded-[2.5rem] border border-white/10 bg-black/20 shadow-xl shadow-emerald-900/5 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 font-black transition-all placeholder:text-white/20 text-white"
+                placeholder="Find seeker..."
+                className="w-full px-6 py-4 rounded-[2rem] border border-white/10 bg-black/20 shadow-xl shadow-emerald-900/5 focus:outline-none focus:ring-4 focus:ring-emerald-500/20 font-black transition-all placeholder:text-white/20 text-white text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <span className="absolute right-8 top-1/2 -translate-y-1/2 opacity-30 text-2xl group-focus-within:opacity-80 transition-opacity">🔍</span>
+              <span className="absolute right-6 top-1/2 -translate-y-1/2 opacity-30 text-lg">🔍</span>
             </div>
             {searchQuery && (
-              <div className="bg-black/40 backdrop-blur-xl rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+              <div className="bg-black/40 backdrop-blur-xl rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300 max-h-60 overflow-y-auto">
                 {filteredSearch.length > 0 ? (
                   filteredSearch.map((a, i) => (
-                    <div key={i} className="flex justify-between items-center p-6 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                    <div key={i} className="flex justify-between items-center p-4 border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                       <div>
-                        <p className="font-black text-white tracking-tight leading-none mb-2">{a.students?.name}</p>
-                        <p className="text-[10px] text-white/40 font-black uppercase tracking-widest">{a.students?.batch}</p>
+                        <p className="font-black text-white text-sm leading-none mb-1">{a.students?.name}</p>
+                        <p className="text-[9px] text-white/40 font-black uppercase tracking-widest">{a.students?.batch}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-emerald-400 tabular-nums">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mt-1">Rank #{a.rank_today}</p>
+                        <p className="font-black text-emerald-400 tabular-nums text-sm">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-[9px] font-black text-white/30 uppercase tracking-widest mt-0.5">#{a.rank_today}</p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p className="p-10 text-center text-white/20 font-black text-[11px] uppercase tracking-widest italic">No matching records</p>
+                  <p className="p-6 text-center text-white/20 font-black text-[10px] uppercase tracking-widest italic">No records</p>
                 )}
               </div>
             )}
           </div>
 
-          <div className="space-y-5 mb-10">
-            <h2 className="font-black text-white uppercase text-xs tracking-[0.2em] px-4 flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Recent Activity Timeline</span>
+          <div className="space-y-3 mb-6">
+            <h2 className="font-black text-white uppercase text-[10px] tracking-[0.2em] px-4 flex items-center space-x-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Timeline (Recent)</span>
             </h2>
-            <div className="overflow-hidden rounded-[3rem] border border-white/10 shadow-sm bg-black/20 backdrop-blur-md">
+            <div className="overflow-hidden rounded-[2.5rem] border border-white/10 shadow-sm bg-black/20 backdrop-blur-md">
               <table className="w-full text-left">
-                <thead className="bg-white/5 text-emerald-200 uppercase text-[9px] font-black tracking-widest">
+                <thead className="bg-white/5 text-emerald-200 uppercase text-[8px] font-black tracking-widest">
                   <tr>
-                    <th className="px-8 py-5">Seeker</th>
-                    <th className="px-8 py-5 text-right">Time</th>
+                    <th className="px-6 py-4">Seeker</th>
+                    <th className="px-6 py-4 text-right">Time</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {timeline10.length > 0 ? timeline10.map((item, i) => (
                     <tr key={i} className="hover:bg-white/5 transition-colors">
-                      <td className="px-8 py-6">
-                        <p className="font-black text-white tracking-tight text-sm leading-none mb-2">{item.students?.name}</p>
-                        <p className="text-[9px] text-white/40 font-black uppercase tracking-widest">{item.students?.batch}</p>
+                      <td className="px-6 py-4">
+                        <p className="font-black text-white tracking-tight text-xs mb-1">{item.students?.name}</p>
+                        <p className="text-[8px] text-white/40 font-black uppercase tracking-widest">{item.students?.batch}</p>
                       </td>
-                      <td className="px-8 py-6 text-right font-black text-emerald-400 tabular-nums text-sm">
+                      <td className="px-6 py-4 text-right font-black text-emerald-400 tabular-nums text-xs">
                         {new Date(item.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={2} className="px-8 py-20 text-center text-white/20 font-black uppercase text-[11px] tracking-widest italic">No check-ins yet for this date</td>
+                      <td colSpan={2} className="px-6 py-10 text-center text-white/20 font-black uppercase text-[10px] tracking-widest italic">Silent...</td>
                     </tr>
                   )}
                 </tbody>
