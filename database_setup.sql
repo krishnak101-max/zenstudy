@@ -54,16 +54,19 @@ ALTER TABLE student_stats ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public select students" ON students FOR SELECT USING (true);
 CREATE POLICY "Public insert students" ON students FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update students" ON students FOR UPDATE USING (true);
+CREATE POLICY "Public delete students" ON students FOR DELETE USING (true);
 
 -- Policies for 'attendance'
 CREATE POLICY "Public select attendance" ON attendance FOR SELECT USING (true);
 CREATE POLICY "Public insert attendance" ON attendance FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update attendance" ON attendance FOR UPDATE USING (true);
+CREATE POLICY "Public delete attendance" ON attendance FOR DELETE USING (true);
 
 -- Policies for 'student_stats'
 CREATE POLICY "Public select student_stats" ON student_stats FOR SELECT USING (true);
 CREATE POLICY "Public insert student_stats" ON student_stats FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public update student_stats" ON student_stats FOR UPDATE USING (true);
+CREATE POLICY "Public delete student_stats" ON student_stats FOR DELETE USING (true);
 
 -- 6. Performance Indices
 -- Helps with fast ranking and leaderboard lookups.
