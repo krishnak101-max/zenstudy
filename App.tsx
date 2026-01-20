@@ -46,7 +46,7 @@ const App: React.FC = () => {
     if (location.pathname === '/setup') return null;
     return (
       <footer className="mt-auto py-8 text-center border-t border-white/5 opacity-50 px-6 backdrop-blur-sm">
-        <p className="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em]">
+        <p className="text-[10px] font-black text-emerald-200 uppercase tracking-[0.2em]">
           ZenStudy &copy; 2026
         </p>
         <p className="text-[9px] font-medium text-white/40 mt-1 uppercase tracking-widest leading-relaxed">
@@ -59,7 +59,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <div className="min-h-screen bg-[#0f0f13] flex flex-col">
-        <div className="max-w-[520px] mx-auto w-full min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900 shadow-[0_0_80px_rgba(0,0,0,0.5)] overflow-x-hidden flex flex-col relative text-white">
+        <div className="max-w-[520px] mx-auto w-full min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-emerald-900 to-teal-900 shadow-[0_0_80px_rgba(0,0,0,0.5)] overflow-x-hidden flex flex-col relative text-white">
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none sticky top-0 h-screen w-full z-0"></div>
           <main className="flex-1 pb-24 relative z-10">
             <Routes>
