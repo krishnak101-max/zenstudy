@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenStudy | Wings Coaching Centre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body { 
+          font-family: 'Plus Jakarta Sans', sans-serif; 
+          background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 50%, #f5f3ff 100%);
+          background-attachment: fixed;
+          color: #1a1a1a;
+          min-height: 100vh;
+        }
+        .zen-gradient {
+          background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+        .medal-seeker { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); }
+        .medal-bronze { background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%); }
+        .medal-silver { background: linear-gradient(135deg, #c0c0c0 0%, #a9a9a9 100%); }
+        .medal-gold { background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%); }
+        .medal-champion { background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(58, 123, 213, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(58, 123, 213, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(58, 123, 213, 0); }
+        }
+
+        .glass-card {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.03);
+        }
+
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+          .max-w-[520px] { max-width: 100% !important; }
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { supabase } from '../supabaseClient.ts';
+import { getFormattedDate } from '../logic/utils.ts';
+
+const ADMIN_PASSWORD = 'tracker2026';
+
+const Admin: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState(false);
+
+  const [selectedDate, setSelectedDate] = useState(getFormattedDate());
+  const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [allAttendance, setAllAttendance] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      setLoginError(false);
+    } else {
+      setLoginError(true);
+      setTimeout(() => setLoginError(false), 2000);
+    }
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { data: students, error: sErr } = await supabase
+        .from('students')
+        .select('*');
+      if (sErr) throw sErr;
+      setAllStudents(students || []);
+
+      const { data, error } = await supabase
+        .from('attendance')
+        .select(`
+          student_id,
+          checkin_time,
+          points,
+          rank_today,
+          students (
+            name,
+            batch
+          )
+        `)
+        .eq('date', selectedDate)
+        .order('checkin_time', { ascending: true });
+
+      if (error) throw error;
+      setAllAttendance(data || []);
+    } catch (err) {
+      console.error('Admin Fetch Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated, selectedDate]);
+
+  const top3 = useMemo(() => allAttendance.slice(0, 3), [allAttendance]);
+  const last3 = useMemo(() => allAttendance.length > 3 ? allAttendance.slice(-3) : [], [allAttendance]);
+  const timeline10 = useMemo(() => allAttendance.slice(-10).reverse(), [allAttendance]);
+  
+  const lateStudents = useMemo(() => {
+    const attendedIds = new Set(allAttendance.map(a => a.student_id));
+    return allStudents.filter(s => !attendedIds.has(s.id));
+  }, [allStudents, allAttendance]);
+
+  const filteredSearch = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return allAttendance.filter(a => 
+      a.students?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.students?.batch.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [allAttendance, searchQuery]);
+
+  const copyToppersToWhatsApp = () => {
+    const toppers = allAttendance.slice(0, 5);
+    if (toppers.length === 0) return alert('No attendance records yet.');
+    
+    let text = `*🦅 ZENSTUDY | TOP EARLY RISERS (${selectedDate})*\n*Wings Coaching Centre Karakunnu*\n\n`;
+    toppers.forEach((item, index) => {
+      const time = new Date(item.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      text += `${index + 1}. *${item.students?.name}* - ${time} (${item.students?.batch})\n`;
+    });
+    text += `\nKeep rising! 🔥🧘‍♂️`;
+    
+    navigator.clipboard.writeText(text);
+    alert('Top 5 copied to clipboard!');
+  };
+
+  const copyLateToWhatsApp = () => {
+    if (lateStudents.length === 0) return alert('Perfect attendance today! ✨');
+    
+    let text = `*⚠️ ZENSTUDY | PENDING ATTENDANCE (${selectedDate})*\n*Wings Coaching Centre Karakunnu*\n\n`;
+    text += `The following seekers have not checked in yet:\n\n`;
+    lateStudents.forEach((student) => {
+      text += `- *${student.name}* (${student.batch})\n`;
+    });
+    text += `\nTime to activate Zen Mode! ⏰📚`;
+    
+    navigator.clipboard.writeText(text);
+    alert('Late list copied to clipboard!');
+  };
+
+  const exportToPDF = () => {
+    const { jsPDF } = (window as any).jspdf;
+    if (!jsPDF) return alert('PDF library not loaded.');
+    
+    const doc = new jsPDF();
+    doc.setFontSize(22);
+    doc.text('ZenStudy Attendance Report', 14, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Report Date: ${selectedDate}`, 14, 28);
+    doc.text(`Wings Coaching Centre Karakunnu`, 14, 33);
+
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Total Attendance: ${allAttendance.length} / ${allStudents.length}`, 14, 45);
+
+    const tableData = allAttendance.map(a => [
+      a.rank_today,
+      a.students?.name || 'N/A',
+      a.students?.batch || 'N/A',
+      new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      a.points
+    ]);
+
+    (doc as any).autoTable({
+      startY: 55,
+      head: [['Rank', 'Name', 'Batch', 'Time', 'Points']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [99, 102, 241] }
+    });
+
+    doc.save(`ZenStudy_Report_${selectedDate}.pdf`);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="p-8 pt-24 flex flex-col items-center justify-center min-h-screen">
+        <div className="w-full max-w-sm bg-white p-12 rounded-[3.5rem] shadow-2xl border border-gray-50 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 zen-gradient"></div>
+          <div className="text-7xl mb-8 transform hover:scale-110 transition-transform">🛡️</div>
+          <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tighter">Admin Gate</h1>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-10">Teacher Verification Required</p>
+          <form onSubmit={handleLogin} className="space-y-5">
+            <input
+              type="password"
+              className={`w-full px-6 py-5 rounded-2xl border ${loginError ? 'border-red-200 bg-red-50 text-red-900 animate-shake' : 'border-gray-100 bg-gray-50'} focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all text-center font-black tracking-[0.6em] text-lg placeholder:tracking-normal placeholder:font-bold placeholder:text-gray-200`}
+              placeholder="SECRET"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="w-full bg-gray-900 text-white font-black py-5 rounded-2xl hover:bg-black transition-all active:scale-95 shadow-xl shadow-gray-200 mt-6 uppercase text-xs tracking-[0.3em]"
+            >
+              Authorize
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 pt-12 pb-24">
+      <div className="mb-10 flex flex-col space-y-6 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
+        <div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tighter italic leading-none">ZenPanel</h1>
+          <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mt-2">Administrative Control</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+           <button onClick={exportToPDF} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">PDF Export</button>
+           <button onClick={copyToppersToWhatsApp} className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all active:scale-95">Top 5</button>
+           <button onClick={copyLateToWhatsApp} className="bg-rose-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all active:scale-95">Late</button>
+           <button onClick={() => setIsAuthenticated(false)} className="bg-gray-100 text-gray-400 hover:text-gray-900 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">Exit</button>
+        </div>
+      </div>
+
+      <div className="mb-10 bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col items-center space-y-3 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-8xl">📅</div>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reporting Date</p>
+          <input 
+            type="date" 
+            className="px-6 py-3 rounded-2xl border border-gray-100 bg-gray-50 font-black text-gray-800 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all cursor-pointer"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+          />
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="animate-spin h-12 w-12 border-[4px] border-indigo-600 border-t-transparent rounded-full"></div>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white p-8 rounded-[3.5rem] border border-gray-50 shadow-sm text-center relative overflow-hidden">
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">Total Seekers</p>
+              <p className="text-4xl font-black text-gray-900 tracking-tighter">{allStudents.length}</p>
+            </div>
+            <div className="bg-indigo-50/40 p-8 rounded-[3.5rem] border border-indigo-100 text-center relative overflow-hidden">
+              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-widest mb-2">Present Today</p>
+              <p className="text-4xl font-black text-indigo-600 tracking-tighter">{allAttendance.length}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-emerald-50/40 p-8 rounded-[3.5rem] border border-emerald-100 relative overflow-hidden">
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-6 text-center">Top Early</p>
+              <div className="space-y-3">
+                {top3.length > 0 ? top3.map((a, i) => (
+                  <div key={i} className="bg-white/80 p-3 rounded-2xl border border-emerald-50 text-center shadow-sm">
+                    <p className="text-[11px] font-black text-gray-900 truncate leading-tight">{a.students?.name}</p>
+                    <p className="text-[10px] font-black text-emerald-500 mt-1 tabular-nums">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                )) : <p className="text-[11px] text-emerald-300 font-bold italic text-center py-4">Waiting...</p>}
+              </div>
+            </div>
+            <div className="bg-rose-50/40 p-8 rounded-[3.5rem] border border-rose-100 relative overflow-hidden">
+              <p className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em] mb-6 text-center">Last Arrivals</p>
+              <div className="space-y-3">
+                {last3.length > 0 ? last3.map((a, i) => (
+                  <div key={i} className="bg-white/80 p-3 rounded-2xl border border-rose-50 text-center shadow-sm">
+                    <p className="text-[11px] font-black text-gray-900 truncate leading-tight">{a.students?.name}</p>
+                    <p className="text-[10px] font-black text-rose-500 mt-1 tabular-nums">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                )) : <p className="text-[11px] text-rose-300 font-bold italic text-center py-4">Waiting...</p>}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            <div className="relative group">
+              <input 
+                type="text"
+                placeholder="Find seeker by name or batch..."
+                className="w-full px-8 py-6 rounded-[2.5rem] border border-gray-100 bg-white shadow-xl shadow-indigo-100/10 focus:outline-none focus:ring-4 focus:ring-indigo-50 font-black transition-all placeholder:text-gray-300 placeholder:font-bold"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <span className="absolute right-8 top-1/2 -translate-y-1/2 opacity-30 text-2xl group-focus-within:opacity-80 transition-opacity">🔍</span>
+            </div>
+            {searchQuery && (
+              <div className="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+                {filteredSearch.length > 0 ? (
+                  filteredSearch.map((a, i) => (
+                    <div key={i} className="flex justify-between items-center p-6 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                      <div>
+                        <p className="font-black text-gray-900 tracking-tight leading-none mb-2">{a.students?.name}</p>
+                        <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{a.students?.batch}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-indigo-600 tabular-nums">{new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">Rank #{a.rank_today}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="p-10 text-center text-gray-300 font-black text-[11px] uppercase tracking-widest italic">No matching records</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-5 mb-10">
+            <h2 className="font-black text-gray-900 uppercase text-xs tracking-[0.2em] px-4 flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+              <span>Recent Activity Timeline</span>
+            </h2>
+            <div className="overflow-hidden rounded-[3rem] border border-gray-100 shadow-sm bg-white">
+               <table className="w-full text-left">
+                  <thead className="bg-gray-50/50 text-gray-400 uppercase text-[9px] font-black tracking-widest">
+                    <tr>
+                      <th className="px-8 py-5">Seeker</th>
+                      <th className="px-8 py-5 text-right">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {timeline10.length > 0 ? timeline10.map((item, i) => (
+                      <tr key={i} className="hover:bg-indigo-50/10 transition-colors">
+                        <td className="px-8 py-6">
+                          <p className="font-black text-gray-900 tracking-tight text-sm leading-none mb-2">{item.students?.name}</p>
+                          <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{item.students?.batch}</p>
+                        </td>
+                        <td className="px-8 py-6 text-right font-black text-indigo-600 tabular-nums text-sm">
+                          {new Date(item.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                      </tr>
+                    )) : (
+                      <tr>
+                        <td colSpan={2} className="px-8 py-20 text-center text-gray-200 font-black uppercase text-[11px] tracking-widest italic">No check-ins yet for this date</td>
+                      </tr>
+                    )}
+                  </tbody>
+               </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Admin;
