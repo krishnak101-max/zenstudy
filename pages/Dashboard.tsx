@@ -142,6 +142,18 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
   const medalLevel = stats?.medal_level || 'Seeker';
   const medalClass = `medal-${medalLevel.toLowerCase()}`;
 
+  // Calculate daily badge based on today's rank
+  const getDailyBadge = (rank: number | undefined) => {
+    if (!rank) return { level: 'Seeker', emoji: '🌱', class: 'medal-seeker' };
+    if (rank === 1) return { level: 'Champion', emoji: '🏆', class: 'medal-champion' };
+    if (rank <= 3) return { level: 'Gold', emoji: '🥇', class: 'medal-gold' };
+    if (rank <= 5) return { level: 'Silver', emoji: '🥈', class: 'medal-silver' };
+    if (rank <= 10) return { level: 'Bronze', emoji: '🥉', class: 'medal-bronze' };
+    return { level: 'Seeker', emoji: '🌱', class: 'medal-seeker' };
+  };
+
+  const dailyBadge = getDailyBadge(todayAttendance?.rank_today);
+
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-20 text-white animate-in fade-in duration-700">
       <div className="flex justify-between items-start mb-6">
@@ -150,11 +162,11 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
           <h1 className="text-3xl font-black text-white tracking-tight leading-none animate-in slide-in-from-left-4 duration-700 delay-100">{student?.name}</h1>
           <p className="text-[11px] font-bold text-emerald-200 mt-2 uppercase tracking-widest bg-white/10 inline-block px-2 py-1 rounded-lg border border-white/10 animate-in zoom-in duration-500 delay-200">{student?.batch} Batch</p>
         </div>
-        <div className={`${medalClass} text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl flex flex-col items-center justify-center min-w-[110px] transition-all transform hover:scale-105 active:scale-95 cursor-default border border-white/20 animate-in slide-in-from-right-4 duration-700`}>
-          <span className="mb-1 opacity-90 text-[8px]">Daily Rank</span>
+        <div className={`${dailyBadge.class} text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl flex flex-col items-center justify-center min-w-[110px] transition-all transform hover:scale-105 active:scale-95 cursor-default border border-white/20 animate-in slide-in-from-right-4 duration-700`}>
+          <span className="mb-1 opacity-90 text-[8px]">Daily Badge</span>
           <span className="flex items-center space-x-1 text-xs">
-            <span>{medalLevel === 'Seeker' ? '🌱' : medalLevel === 'Bronze' ? '🥉' : medalLevel === 'Silver' ? '🥈' : medalLevel === 'Gold' ? '🥇' : '🏆'}</span>
-            <span>{medalLevel}</span>
+            <span>{dailyBadge.emoji}</span>
+            <span>{dailyBadge.level}</span>
           </span>
         </div>
       </div>

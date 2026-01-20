@@ -54,7 +54,6 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
   };
 
   return (
-  return (
     <div className="p-6 sm:p-8 pt-16 sm:pt-24 pb-10 flex flex-col items-center justify-start min-h-screen">
       <div className="mb-10 text-center relative z-10 animate-in slide-in-from-top-4 duration-700">
         <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 rounded-[2rem] mx-auto mb-8 flex items-center justify-center shadow-2xl shadow-emerald-500/50 animate-[bounce_3s_infinite]">
