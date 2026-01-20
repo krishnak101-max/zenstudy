@@ -59,7 +59,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <div className="min-h-screen bg-[#0f0f13] flex flex-col">
-        <div className="mx-auto w-full max-w-6xl min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-emerald-900 to-teal-900 shadow-2xl overflow-x-hidden flex flex-col relative text-white">
+        <div className="max-w-[520px] mx-auto w-full min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-emerald-900 to-teal-900 shadow-[0_0_80px_rgba(0,0,0,0.5)] overflow-x-hidden flex flex-col relative text-white">
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none sticky top-0 h-screen w-full z-0"></div>
           <main className="flex-1 pb-24 relative z-10">
             <Routes>

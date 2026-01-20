@@ -31,7 +31,7 @@ const Leaderboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="p-4 pt-3 text-white animate-in fade-in duration-700">
+    <div className="p-6 pt-12 text-white animate-in fade-in duration-700">
       <div className="mb-6 text-center">
         <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 tracking-tighter mb-2 italic drop-shadow-sm animate-in slide-in-from-top-4 duration-700">Morning Titans 🏆</h1>
         <p className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.3em] bg-white/10 inline-block px-4 py-1.5 rounded-full border border-white/10 animate-in slide-in-from-bottom-2 duration-500 delay-200">Top 10 Elite Today</p>
