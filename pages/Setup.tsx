@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient.ts';
 
@@ -81,34 +80,34 @@ const Setup: React.FC<SetupProps> = ({ onComplete }) => {
         </div>
 
         <div className="space-y-3">
-          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Current Batch</label>
+          <label className="text-[10px] font-black text-indigo-200 uppercase tracking-widest ml-2">Current Batch</label>
           <div className="relative">
             <select
-              className="w-full px-6 py-5 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-gray-800 appearance-none cursor-pointer"
+              className="w-full px-6 py-5 rounded-2xl border border-white/10 bg-white/5 focus:bg-white/20 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 transition-all font-bold text-white appearance-none cursor-pointer tracking-wide"
               value={batch}
               onChange={(e) => setBatch(e.target.value)}
               disabled={loading}
             >
-              <option value="" disabled>Select your batch</option>
-              <option value="S1">S1 Batch</option>
-              <option value="S2">S2 Batch</option>
-              <option value="S3">S3 Batch</option>
+              <option value="" disabled className="text-gray-900">Select your batch</option>
+              <option value="S1" className="text-gray-900">S1 Batch</option>
+              <option value="S2" className="text-gray-900">S2 Batch</option>
+              <option value="S3" className="text-gray-900">S3 Batch</option>
             </select>
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">
               ▼
             </div>
           </div>
         </div>
 
         {error && (
-          <div className="p-4 bg-red-50 text-red-600 rounded-2xl text-[11px] font-black border border-red-100 uppercase tracking-tight text-center">
+          <div className="p-4 bg-red-500/20 text-red-200 rounded-2xl text-[11px] font-black border border-red-500/30 uppercase tracking-tight text-center backdrop-blur-md">
             ⚠️ {error}
           </div>
         )}
 
         <button
           type="submit"
-          className="w-full zen-gradient text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-100 transition-all transform active:scale-95 flex justify-center items-center text-lg mt-4 disabled:opacity-50"
+          className="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-black py-5 rounded-2xl shadow-xl shadow-indigo-500/30 transition-all transform active:scale-95 flex justify-center items-center text-lg mt-4 disabled:opacity-50 hover:brightness-110"
           disabled={loading}
         >
           {loading ? (
