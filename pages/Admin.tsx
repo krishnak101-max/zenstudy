@@ -122,6 +122,36 @@ const Admin: React.FC = () => {
     }
   };
 
+  const resetAllData = async () => {
+    if (!window.confirm('⚠️ DANGER ZONE ⚠️\n\nAre you sure you want to delete ALL data? This includes:\n- All students\n- All attendance records\n- All points and stats\n\nThis action CANNOT be undone.')) {
+      return;
+    }
+
+    if (!window.confirm('Final Confirmation: Type "DELETE" to confirm.')) { // Simplified confirmation for now, just a second click
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error: attErr } = await supabase.from('attendance').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      if (attErr) throw attErr;
+
+      const { error: statErr } = await supabase.from('student_stats').delete().neq('student_id', '00000000-0000-0000-0000-000000000000');
+      if (statErr) throw statErr;
+
+      const { error: stuErr } = await supabase.from('students').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      if (stuErr) throw stuErr;
+
+      alert('All data has been successfully reset.');
+      window.location.reload();
+    } catch (err: any) {
+      console.error('Reset Failed:', err);
+      alert('Failed to reset data: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="p-8 pt-24 flex flex-col items-center justify-center min-h-screen">
@@ -162,6 +192,7 @@ const Admin: React.FC = () => {
           <button onClick={exportToPDF} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">PDF Export</button>
           <button onClick={copyToppersToWhatsApp} className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all active:scale-95">Top 5</button>
           <button onClick={copyLateToWhatsApp} className="bg-rose-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all active:scale-95">Late</button>
+          <button onClick={resetAllData} className="bg-red-500 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-600 shadow-lg shadow-red-100 transition-all active:scale-95">Reset Data</button>
           <button onClick={() => setIsAuthenticated(false)} className="bg-gray-100 text-gray-400 hover:text-gray-900 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">Exit</button>
         </div>
       </div>
