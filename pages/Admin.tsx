@@ -181,7 +181,7 @@ const Admin: React.FC = () => {
   }
 
   return (
-    <div className="p-6 pt-12 pb-24 text-white animate-in slide-in-from-bottom-4 duration-700">
+    <div className="p-6 pt-6 pb-24 text-white animate-in slide-in-from-bottom-4 duration-700">
       <div className="mb-10 flex flex-col space-y-6 sm:flex-row sm:justify-between sm:items-center sm:space-y-0">
         <div>
           <h1 className="text-4xl font-black text-white tracking-tighter italic leading-none">ZenPanel</h1>
