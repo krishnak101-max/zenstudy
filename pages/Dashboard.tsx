@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../supabaseClient.ts';
-import { 
-  calculatePoints, 
-  getMedal, 
-  getFormattedDate, 
-  getYesterdayDate, 
+import {
+  calculatePoints,
+  getMedal,
+  getFormattedDate,
+  getYesterdayDate,
   getRandomStudyQuote,
   getOrdinal
 } from '../logic/utils.ts';
@@ -56,7 +56,7 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
         .eq('student_id', studentId)
         .eq('date', today)
         .maybeSingle();
-      
+
       if (att) {
         setTodayAttendance(att);
         const { count: beforeCount } = await supabase
@@ -99,7 +99,7 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
         .select('*', { count: 'exact', head: true })
         .eq('date', today)
         .lt('checkin_time', newAtt.checkin_time);
-      
+
       const rank = (beforeCount || 0) + 1;
       const points = calculatePoints(newAtt.checkin_time);
 
@@ -109,7 +109,7 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
         .eq('id', newAtt.id)
         .select()
         .single();
-      
+
       if (upAttErr) throw upAttErr;
       setTodayAttendance(updatedAtt);
       setWokeBeforeCount(beforeCount || 0);
@@ -190,17 +190,17 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
       <div className="mb-12">
         {!todayAttendance ? (
           <div className="space-y-6">
-             <button
+            <button
               onClick={markAttendance}
               disabled={actionLoading}
               className="w-full zen-gradient text-white h-60 rounded-[3.5rem] shadow-2xl shadow-indigo-200 flex flex-col items-center justify-center transition-all active:scale-[0.96] group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
               {actionLoading ? (
-                 <div className="flex flex-col items-center">
-                    <div className="w-14 h-14 border-4 border-white/20 border-t-white rounded-full animate-spin mb-6"></div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-80">Sealing Presence...</span>
-                 </div>
+                <div className="flex flex-col items-center">
+                  <div className="w-14 h-14 border-4 border-white/20 border-t-white rounded-full animate-spin mb-6"></div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-80">Sealing Presence...</span>
+                </div>
               ) : (
                 <>
                   <div className="w-28 h-28 bg-white/20 rounded-full flex items-center justify-center text-6xl mb-5 group-hover:scale-110 transition-transform duration-1000 shadow-inner">☀️</div>
@@ -221,18 +221,30 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
               <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
                 <span className="text-[12rem]">🦉</span>
               </div>
-              
+
               <div className="text-7xl mb-6 transform hover:scale-110 transition-transform duration-700">🏆</div>
               <h2 className="text-4xl font-black text-gray-900 mb-3 tracking-tighter">Rank: {getOrdinal(todayAttendance.rank_today)}</h2>
-              
+
               <div className="mb-8">
                 <p className="text-indigo-600 font-black bg-indigo-50 py-2 px-5 rounded-full inline-block text-[10px] uppercase tracking-widest border border-indigo-100 shadow-sm">
-                   Woke before {wokeBeforeCount} {wokeBeforeCount === 1 ? 'seeker' : 'seekers'}
+                  Woke before {wokeBeforeCount} {wokeBeforeCount === 1 ? 'seeker' : 'seekers'}
                 </p>
               </div>
-              
+
+              {todayAttendance.rank_today <= 5 && (
+                <div className="mb-8 animate-bounce">
+                  <div className="text-4xl mb-2">🎉</div>
+                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                    Top 5 Early Bird!
+                  </p>
+                  <p className="text-[8px] text-gray-400 font-medium uppercase tracking-widest mt-1">
+                    You set the pace today
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 mb-8">
-                 <div className="bg-white/90 rounded-3xl p-6 shadow-sm border border-indigo-50">
+                <div className="bg-white/90 rounded-3xl p-6 shadow-sm border border-indigo-50">
                   <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Energy</p>
                   <p className="text-2xl font-black text-indigo-600">+{todayAttendance.points}</p>
                 </div>
@@ -245,18 +257,18 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
               <div className="pt-6 border-t border-indigo-50">
                 <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2">Focus Status</p>
                 <p className="text-xl font-black text-gray-800 uppercase tracking-tighter flex items-center justify-center space-x-2">
-                   <span>{medalLevel === 'Seeker' ? '🌱' : medalLevel === 'Bronze' ? '🥉' : medalLevel === 'Silver' ? '🥈' : medalLevel === 'Gold' ? '🥇' : '🏆'}</span>
-                   <span>{medalLevel} Badge Active</span>
+                  <span>{medalLevel === 'Seeker' ? '🌱' : medalLevel === 'Bronze' ? '🥉' : medalLevel === 'Silver' ? '🥈' : medalLevel === 'Gold' ? '🥇' : '🏆'}</span>
+                  <span>{medalLevel} Badge Active</span>
                 </p>
               </div>
             </div>
 
             <div className="bg-amber-50/40 border border-amber-100 rounded-3xl p-7 text-center shadow-sm relative group overflow-hidden glass-card">
-               <div className="absolute -left-4 -top-4 text-7xl opacity-[0.06] group-hover:scale-110 transition-transform duration-1000">💡</div>
-               <p className="text-[9px] font-black text-amber-600 uppercase tracking-[0.3em] mb-4">Zen Wisdom</p>
-               <p className="text-sm font-bold text-amber-900 italic leading-relaxed px-6">
-                 "{studyQuote}"
-               </p>
+              <div className="absolute -left-4 -top-4 text-7xl opacity-[0.06] group-hover:scale-110 transition-transform duration-1000">💡</div>
+              <p className="text-[9px] font-black text-amber-600 uppercase tracking-[0.3em] mb-4">Zen Wisdom</p>
+              <p className="text-sm font-bold text-amber-900 italic leading-relaxed px-6">
+                "{studyQuote}"
+              </p>
             </div>
           </div>
         )}
@@ -271,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
           {[3, 7, 15, 30].map((milestone) => {
             const isReached = (stats?.current_streak || 0) >= milestone;
             const milestoneMedal = milestone === 3 ? 'bronze' : milestone === 7 ? 'silver' : milestone === 15 ? 'gold' : 'champion';
-            
+
             return (
               <div key={milestone} className="flex flex-col items-center z-10">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-xl transition-all duration-1000 transform ${isReached ? `medal-${milestoneMedal} text-white scale-110 rotate-3` : 'bg-white text-gray-200 border border-gray-100 opacity-30'}`}>
@@ -285,14 +297,14 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
             );
           })}
           <div className="absolute top-7 left-0 right-0 h-1.5 bg-gray-50 -z-0 rounded-full mx-6"></div>
-          <div 
-            className="absolute top-7 left-0 h-1.5 zen-gradient -z-0 transition-all duration-1000 rounded-full mx-6 shadow-sm" 
+          <div
+            className="absolute top-7 left-0 h-1.5 zen-gradient -z-0 transition-all duration-1000 rounded-full mx-6 shadow-sm"
             style={{ width: `calc(${Math.min(100, (stats?.current_streak || 0) / 30 * 100)}% - 48px)` }}
           ></div>
         </div>
         <p className="mt-10 text-center text-[9px] font-black text-indigo-300 uppercase tracking-[0.3em] italic opacity-50">Consistency is the fuel of ZenStudy</p>
       </div>
-    </div>
+    </div >
   );
 };
 
