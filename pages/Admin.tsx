@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient.ts';
 import { getFormattedDate } from '../logic/utils.ts';
+import { generateAttendancePDF } from '../logic/pdfGenerator.ts';
 
 const ADMIN_PASSWORD = 'tracker2026';
 
@@ -69,7 +70,7 @@ const Admin: React.FC = () => {
   const top3 = useMemo(() => allAttendance.slice(0, 3), [allAttendance]);
   const last3 = useMemo(() => allAttendance.length > 3 ? allAttendance.slice(-3) : [], [allAttendance]);
   const timeline10 = useMemo(() => allAttendance.slice(-10).reverse(), [allAttendance]);
-  
+
   const lateStudents = useMemo(() => {
     const attendedIds = new Set(allAttendance.map(a => a.student_id));
     return allStudents.filter(s => !attendedIds.has(s.id));
@@ -77,7 +78,7 @@ const Admin: React.FC = () => {
 
   const filteredSearch = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    return allAttendance.filter(a => 
+    return allAttendance.filter(a =>
       a.students?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.students?.batch.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -86,65 +87,39 @@ const Admin: React.FC = () => {
   const copyToppersToWhatsApp = () => {
     const toppers = allAttendance.slice(0, 5);
     if (toppers.length === 0) return alert('No attendance records yet.');
-    
+
     let text = `*🦅 ZENSTUDY | TOP EARLY RISERS (${selectedDate})*\n*Wings Coaching Centre Karakunnu*\n\n`;
     toppers.forEach((item, index) => {
       const time = new Date(item.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       text += `${index + 1}. *${item.students?.name}* - ${time} (${item.students?.batch})\n`;
     });
     text += `\nKeep rising! 🔥🧘‍♂️`;
-    
+
     navigator.clipboard.writeText(text);
     alert('Top 5 copied to clipboard!');
   };
 
   const copyLateToWhatsApp = () => {
     if (lateStudents.length === 0) return alert('Perfect attendance today! ✨');
-    
+
     let text = `*⚠️ ZENSTUDY | PENDING ATTENDANCE (${selectedDate})*\n*Wings Coaching Centre Karakunnu*\n\n`;
     text += `The following seekers have not checked in yet:\n\n`;
     lateStudents.forEach((student) => {
       text += `- *${student.name}* (${student.batch})\n`;
     });
     text += `\nTime to activate Zen Mode! ⏰📚`;
-    
+
     navigator.clipboard.writeText(text);
     alert('Late list copied to clipboard!');
   };
 
   const exportToPDF = () => {
-    const { jsPDF } = (window as any).jspdf;
-    if (!jsPDF) return alert('PDF library not loaded.');
-    
-    const doc = new jsPDF();
-    doc.setFontSize(22);
-    doc.text('ZenStudy Attendance Report', 14, 20);
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Report Date: ${selectedDate}`, 14, 28);
-    doc.text(`Wings Coaching Centre Karakunnu`, 14, 33);
-
-    doc.setFontSize(12);
-    doc.setTextColor(0);
-    doc.text(`Total Attendance: ${allAttendance.length} / ${allStudents.length}`, 14, 45);
-
-    const tableData = allAttendance.map(a => [
-      a.rank_today,
-      a.students?.name || 'N/A',
-      a.students?.batch || 'N/A',
-      new Date(a.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      a.points
-    ]);
-
-    (doc as any).autoTable({
-      startY: 55,
-      head: [['Rank', 'Name', 'Batch', 'Time', 'Points']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [99, 102, 241] }
-    });
-
-    doc.save(`ZenStudy_Report_${selectedDate}.pdf`);
+    try {
+      generateAttendancePDF(selectedDate, allStudents.length, allAttendance);
+    } catch (error) {
+      console.error('PDF Generation Failed:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
   };
 
   if (!isAuthenticated) {
@@ -184,22 +159,22 @@ const Admin: React.FC = () => {
           <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mt-2">Administrative Control</p>
         </div>
         <div className="flex flex-wrap gap-2">
-           <button onClick={exportToPDF} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">PDF Export</button>
-           <button onClick={copyToppersToWhatsApp} className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all active:scale-95">Top 5</button>
-           <button onClick={copyLateToWhatsApp} className="bg-rose-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all active:scale-95">Late</button>
-           <button onClick={() => setIsAuthenticated(false)} className="bg-gray-100 text-gray-400 hover:text-gray-900 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">Exit</button>
+          <button onClick={exportToPDF} className="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">PDF Export</button>
+          <button onClick={copyToppersToWhatsApp} className="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all active:scale-95">Top 5</button>
+          <button onClick={copyLateToWhatsApp} className="bg-rose-600 text-white px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all active:scale-95">Late</button>
+          <button onClick={() => setIsAuthenticated(false)} className="bg-gray-100 text-gray-400 hover:text-gray-900 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors">Exit</button>
         </div>
       </div>
 
       <div className="mb-10 bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm flex flex-col items-center space-y-3 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-8xl">📅</div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reporting Date</p>
-          <input 
-            type="date" 
-            className="px-6 py-3 rounded-2xl border border-gray-100 bg-gray-50 font-black text-gray-800 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all cursor-pointer"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-          />
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-8xl">📅</div>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reporting Date</p>
+        <input
+          type="date"
+          className="px-6 py-3 rounded-2xl border border-gray-100 bg-gray-50 font-black text-gray-800 focus:outline-none focus:ring-4 focus:ring-indigo-50 transition-all cursor-pointer"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+        />
       </div>
 
       {loading ? (
@@ -246,7 +221,7 @@ const Admin: React.FC = () => {
 
           <div className="space-y-5">
             <div className="relative group">
-              <input 
+              <input
                 type="text"
                 placeholder="Find seeker by name or batch..."
                 className="w-full px-8 py-6 rounded-[2.5rem] border border-gray-100 bg-white shadow-xl shadow-indigo-100/10 focus:outline-none focus:ring-4 focus:ring-indigo-50 font-black transition-all placeholder:text-gray-300 placeholder:font-bold"
@@ -283,31 +258,31 @@ const Admin: React.FC = () => {
               <span>Recent Activity Timeline</span>
             </h2>
             <div className="overflow-hidden rounded-[3rem] border border-gray-100 shadow-sm bg-white">
-               <table className="w-full text-left">
-                  <thead className="bg-gray-50/50 text-gray-400 uppercase text-[9px] font-black tracking-widest">
-                    <tr>
-                      <th className="px-8 py-5">Seeker</th>
-                      <th className="px-8 py-5 text-right">Time</th>
+              <table className="w-full text-left">
+                <thead className="bg-gray-50/50 text-gray-400 uppercase text-[9px] font-black tracking-widest">
+                  <tr>
+                    <th className="px-8 py-5">Seeker</th>
+                    <th className="px-8 py-5 text-right">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {timeline10.length > 0 ? timeline10.map((item, i) => (
+                    <tr key={i} className="hover:bg-indigo-50/10 transition-colors">
+                      <td className="px-8 py-6">
+                        <p className="font-black text-gray-900 tracking-tight text-sm leading-none mb-2">{item.students?.name}</p>
+                        <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{item.students?.batch}</p>
+                      </td>
+                      <td className="px-8 py-6 text-right font-black text-indigo-600 tabular-nums text-sm">
+                        {new Date(item.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {timeline10.length > 0 ? timeline10.map((item, i) => (
-                      <tr key={i} className="hover:bg-indigo-50/10 transition-colors">
-                        <td className="px-8 py-6">
-                          <p className="font-black text-gray-900 tracking-tight text-sm leading-none mb-2">{item.students?.name}</p>
-                          <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{item.students?.batch}</p>
-                        </td>
-                        <td className="px-8 py-6 text-right font-black text-indigo-600 tabular-nums text-sm">
-                          {new Date(item.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                      </tr>
-                    )) : (
-                      <tr>
-                        <td colSpan={2} className="px-8 py-20 text-center text-gray-200 font-black uppercase text-[11px] tracking-widest italic">No check-ins yet for this date</td>
-                      </tr>
-                    )}
-                  </tbody>
-               </table>
+                  )) : (
+                    <tr>
+                      <td colSpan={2} className="px-8 py-20 text-center text-gray-200 font-black uppercase text-[11px] tracking-widest italic">No check-ins yet for this date</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
