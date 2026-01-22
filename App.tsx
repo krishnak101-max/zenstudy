@@ -24,16 +24,16 @@ const App: React.FC = () => {
     if (noNavRoutes.includes(location.pathname)) return null;
 
     return (
-      <nav className="fixed bottom-0 left-0 right-0 bg-black/20 backdrop-blur-xl border-t border-white/10 px-4 py-3 flex justify-around items-center z-50 shadow-2xl">
-        <Link to="/" className={`flex flex-col items-center transition-all ${location.pathname === '/' ? 'text-white scale-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'text-white/40 hover:text-white/80'}`}>
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-200 px-4 py-3 flex justify-around items-center z-50 shadow-lg max-w-[1280px] mx-auto">
+        <Link to="/" className={`flex flex-col items-center transition-all ${location.pathname === '/' ? 'text-[#2563EB] scale-110' : 'text-gray-400 hover:text-[#2563EB]'}`}>
           <span className="text-xl">☀️</span>
           <span className="text-[10px] font-bold uppercase mt-0.5 tracking-tighter">Presence</span>
         </Link>
-        <Link to="/leaderboard" className={`flex flex-col items-center transition-all ${location.pathname === '/leaderboard' ? 'text-white scale-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'text-white/40 hover:text-white/80'}`}>
+        <Link to="/leaderboard" className={`flex flex-col items-center transition-all ${location.pathname === '/leaderboard' ? 'text-[#22C55E] scale-110' : 'text-gray-400 hover:text-[#22C55E]'}`}>
           <span className="text-xl">🏆</span>
           <span className="text-[10px] font-bold uppercase mt-0.5 tracking-tighter">Ranks</span>
         </Link>
-        <Link to="/admin" className={`flex flex-col items-center transition-all ${location.pathname === '/admin' ? 'text-white scale-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'text-white/40 hover:text-white/80'}`}>
+        <Link to="/admin" className={`flex flex-col items-center transition-all ${location.pathname === '/admin' ? 'text-[#2563EB] scale-110' : 'text-gray-400 hover:text-[#2563EB]'}`}>
           <span className="text-xl">🛡️</span>
           <span className="text-[10px] font-bold uppercase mt-0.5 tracking-tighter">Admin</span>
         </Link>
@@ -45,11 +45,11 @@ const App: React.FC = () => {
     const location = useLocation();
     if (location.pathname === '/setup') return null;
     return (
-      <footer className="mt-auto py-8 text-center border-t border-white/5 opacity-50 px-6 backdrop-blur-sm">
-        <p className="text-[10px] font-black text-emerald-200 uppercase tracking-[0.2em]">
+      <footer className="mt-auto py-8 text-center border-t border-gray-100 px-6">
+        <p className="text-[10px] font-black text-[#22C55E] uppercase tracking-[0.2em]">
           ZenStudy &copy; 2026
         </p>
-        <p className="text-[9px] font-medium text-white/40 mt-1 uppercase tracking-widest leading-relaxed">
+        <p className="text-[9px] font-medium text-gray-400 mt-1 uppercase tracking-widest leading-relaxed">
           Wings Coaching Centre Karakunnu
         </p>
       </footer>
@@ -58,10 +58,9 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="min-h-screen bg-[#0f0f13] flex flex-col">
-        <div className="mx-auto w-full max-w-7xl min-h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-emerald-900 to-teal-900 shadow-2xl overflow-x-hidden flex flex-col relative text-white">
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none sticky top-0 h-screen w-full z-0"></div>
-          <main className="flex-1 pb-24 relative z-10">
+      <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
+        <div className="mx-auto w-full max-w-[1280px] min-h-screen bg-white shadow-lg overflow-x-hidden flex flex-col relative">
+          <main className="flex-1 pb-24 relative">
             <Routes>
               <Route
                 path="/setup"

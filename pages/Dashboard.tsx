@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient.ts';
 import { Student, Attendance, StudentStats } from '../types.ts';
+import { getFormattedDate, calculatePoints } from '../logic/utils.ts';
+import { updateStudentStats } from '../logic/statsUpdater.ts';
 
 interface DashboardProps {
   studentId: string;
@@ -12,7 +14,8 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
   const [stats, setStats] = useState<StudentStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [wokeBeforeCount, setWokeBeforeCount] = useState<number>(0);
+
+  const [totalAwakeCount, setTotalAwakeCount] = useState<number>(0);
   const [studyQuote, setStudyQuote] = useState<string>("");
 
   const quotes = [
@@ -30,28 +33,26 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
     setStudyQuote(quotes[Math.floor(Math.random() * quotes.length)]);
   }, [studentId]);
 
-  const getFormattedDate = (date: Date = new Date()): string => {
-    const d = new Date(date);
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().split('T')[0];
-  };
 
   const fetchInitialData = async () => {
     try {
       setLoading(true);
       const today = getFormattedDate();
 
-      // 1. Fetch Student Details
       const { data: std, error: stdErr } = await supabase
         .from('students')
         .select('*')
         .eq('id', studentId)
-        .single();
+        .maybeSingle();
 
       if (stdErr) throw stdErr;
+      if (!std) {
+        alert('Student not found. Please register again.');
+        window.location.reload();
+        return;
+      }
       setStudent(std);
 
-      // 2. Fetch Today's Attendance
       const { data: att, error: attErr } = await supabase
         .from('attendance')
         .select('*')
@@ -62,25 +63,25 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
       if (attErr) throw attErr;
       setTodayAttendance(att);
 
-      // 3. Fetch Stats
       const { data: st, error: stErr } = await supabase
         .from('student_stats')
         .select('*')
         .eq('student_id', studentId)
         .maybeSingle();
 
-      if (stErr && stErr.code !== 'PGRST116') throw stErr; // Ignore no rows error
+      if (stErr && stErr.code !== 'PGRST116') throw stErr;
       setStats(st);
 
-      // 4. Fetch 'Woke Before' count (if attended)
       if (att) {
+
+      } else {
+        // If not marked, get total count of students awake today for motivation
         const { count, error: countErr } = await supabase
           .from('attendance')
           .select('*', { count: 'exact', head: true })
-          .eq('date', today)
-          .gt('rank_today', att.rank_today);
+          .eq('date', today);
 
-        if (!countErr) setWokeBeforeCount(count || 0);
+        if (!countErr) setTotalAwakeCount(count || 0);
       }
 
     } catch (error: any) {
@@ -92,10 +93,18 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
 
   const markAttendance = async () => {
     if (todayAttendance || actionLoading) return;
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    if (currentHour >= 0 && currentHour < 3) {
+      alert('🌙 Time to Rest & Recharge! 😴\n\n📚 Great minds need great rest!\n\nAttendance is restricted between 12 AM - 3 AM.\n\n💤 Take proper rest now\n🌅 Wake up fresh at 3 AM\n⚡ Restart your studies with renewed energy\n\n"Success is the sum of small efforts repeated day in and day out."\n\nYour health = Your wealth! 💚✨');
+      return;
+    }
+
     setActionLoading(true);
     try {
-      const now = new Date();
       const today = getFormattedDate();
+      const points = calculatePoints(now.toISOString());
 
       const { data: newAtt, error } = await supabase
         .from('attendance')
@@ -103,19 +112,26 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
           student_id: studentId,
           date: today,
           checkin_time: now.toISOString(),
-          points: 10,
+          points: points,
         }])
         .select()
         .single();
 
       if (error) throw error;
-      setTodayAttendance(newAtt);
 
-      // Update stats locally or refetch
+      // Update stats (points, streak, medal)
+      await updateStudentStats(studentId, points, today);
+
+      setTodayAttendance(newAtt);
       fetchInitialData();
 
     } catch (error: any) {
-      alert('Error marking attendance: ' + error.message);
+      if (error.code === '23505' || error.status === 409) {
+        // Attendance already marked (conflict), refreshing locally
+        await fetchInitialData();
+      } else {
+        alert('Error marking attendance: ' + error.message);
+      }
     } finally {
       setActionLoading(false);
     }
@@ -129,182 +145,205 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="relative w-24 h-24 mb-6">
-          <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-20"></div>
-          <div className="relative w-full h-full bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2rem] flex items-center justify-center text-4xl shadow-xl shadow-emerald-500/30">🦅</div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC]">
+        <div className="relative w-20 h-20 mb-6">
+          <div className="absolute inset-0 bg-[#2563EB] rounded-full animate-ping opacity-20"></div>
+          <div className="relative w-full h-full bg-gradient-to-br from-[#2563EB] to-[#06B6D4] rounded-2xl flex items-center justify-center text-4xl shadow-xl">🦅</div>
         </div>
-        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.4em] animate-pulse">Synchronizing Presence...</p>
+        <p className="text-xs font-bold text-[#2563EB] uppercase tracking-wider animate-pulse">Loading Dashboard...</p>
       </div>
     );
   }
 
   const medalLevel = stats?.medal_level || 'Seeker';
-  const medalClass = `medal-${medalLevel.toLowerCase()}`;
-
-  // Calculate daily badge based on today's rank
-  const getDailyBadge = (rank: number | undefined) => {
-    if (!rank) return { level: 'Seeker', emoji: '🌱', class: 'medal-seeker' };
-    if (rank === 1) return { level: 'Champion', emoji: '🏆', class: 'medal-champion' };
-    if (rank <= 3) return { level: 'Gold', emoji: '🥇', class: 'medal-gold' };
-    if (rank <= 5) return { level: 'Silver', emoji: '🥈', class: 'medal-silver' };
-    if (rank <= 10) return { level: 'Bronze', emoji: '🥉', class: 'medal-bronze' };
-    return { level: 'Seeker', emoji: '🌱', class: 'medal-seeker' };
+  const getRankBadge = (rank: number | undefined) => {
+    if (!rank) return { label: 'Not Yet', color: 'text-gray-400', bg: 'bg-gray-100' };
+    if (rank === 1) return { label: '1st Place 🏆', color: 'text-amber-600', bg: 'bg-amber-50' };
+    if (rank <= 3) return { label: `${getOrdinal(rank)} - Top 3 🥇`, color: 'text-emerald-600', bg: 'bg-emerald-50' };
+    if (rank <= 5) return { label: `${getOrdinal(rank)} - Top 5 🥈`, color: 'text-cyan-600', bg: 'bg-cyan-50' };
+    if (rank <= 10) return { label: `${getOrdinal(rank)} - Top 10 🥉`, color: 'text-teal-600', bg: 'bg-teal-50' };
+    return { label: `${getOrdinal(rank)}`, color: 'text-gray-600', bg: 'bg-gray-50' };
   };
 
-  const dailyBadge = getDailyBadge(todayAttendance?.rank_today);
+  const rankBadge = getRankBadge(todayAttendance?.rank_today);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-20 text-white animate-in fade-in duration-700">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1.5 animate-in slide-in-from-left-4 duration-500">Wings Seeker</p>
-          <h1 className="text-3xl font-black text-white tracking-tight leading-none animate-in slide-in-from-left-4 duration-700 delay-100">{student?.name}</h1>
-          <p className="text-[11px] font-bold text-emerald-200 mt-2 uppercase tracking-widest bg-white/10 inline-block px-2 py-1 rounded-lg border border-white/10 animate-in zoom-in duration-500 delay-200">{student?.batch} Batch</p>
+    <div className="w-full min-h-screen bg-[#F8FAFC] px-4 sm:px-6 lg:px-8 pt-6 pb-24">
+      <div className="max-w-[1280px] mx-auto">
+        {/* Header Section */}
+        <div className="mb-8 fade-in">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wide mb-1">Wings Student</p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight">{student?.name}</h1>
+              <span className="inline-block mt-2 px-3 py-1 bg-[#DBEAFE] text-[#1D4ED8] text-xs font-bold uppercase tracking-wide rounded-full">
+                {student?.batch} Batch
+              </span>
+            </div>
+            <div className={`${rankBadge.bg} ${rankBadge.color} px-4 py-3 rounded-xl text-sm font-bold text-center min-w-[120px] shadow-sm`}>
+              <div className="text-xs opacity-70 mb-0.5">Today's Rank</div>
+              <div>{rankBadge.label}</div>
+            </div>
+          </div>
         </div>
-        <div className={`${dailyBadge.class} text-white px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-2xl flex flex-col items-center justify-center min-w-[110px] transition-all transform hover:scale-105 active:scale-95 cursor-default border border-white/20 animate-in slide-in-from-right-4 duration-700`}>
-          <span className="mb-1 opacity-90 text-[8px]">Daily Badge</span>
-          <span className="flex items-center space-x-1 text-xs">
-            <span>{dailyBadge.emoji}</span>
-            <span>{dailyBadge.level}</span>
-          </span>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-10">
-        <div className="bg-emerald-900/20 backdrop-blur-md p-6 rounded-[2.5rem] shadow-xl relative overflow-hidden group border border-emerald-500/30 transition-all hover:bg-emerald-900/30 hover:border-emerald-500/50 animate-in slide-in-from-bottom-4 duration-700 delay-100">
-          <div className="absolute -right-4 -bottom-4 text-7xl opacity-[0.1] rotate-12 group-hover:rotate-0 transition-transform duration-700 grayscale hover:grayscale-0">💎</div>
-          <p className="text-[9px] text-emerald-200 font-black uppercase tracking-widest mb-2">Power Points</p>
-          <p className="text-4xl font-black text-white tracking-tighter">{stats?.total_points || 0}</p>
+        {/* Stats Grid - Responsive */}
+        <div className="stats-grid mb-8 slide-up">
+          <div className="premium-card card-stat">
+            <div className="text-5xl mb-2">💎</div>
+            <p className="text-xs text-[#64748B] font-semibold uppercase tracking-wide mb-1">Total Points</p>
+            <p className="text-3xl font-black text-[#0F172A]">{stats?.total_points || 0}</p>
+          </div>
+          <div className="premium-card card-stat">
+            <div className="text-5xl mb-2">🔥</div>
+            <p className="text-xs text-[#64748B] font-semibold uppercase tracking-wide mb-1">Streak</p>
+            <p className="text-3xl font-black text-[#0F172A]">{stats?.current_streak || 0} <span className="text-sm text-[#22C55E]">Days</span></p>
+          </div>
+          <div className="premium-card card-stat">
+            <div className="text-5xl mb-2">🏅</div>
+            <p className="text-xs text-[#64748B] font-semibold uppercase tracking-wide mb-1">Best Streak</p>
+            <p className="text-3xl font-black text-[#0F172A]">{stats?.best_streak || 0} <span className="text-sm text-[#A3E635]">Days</span></p>
+          </div>
+          <div className="premium-card card-stat">
+            <div className="text-5xl mb-2">⭐</div>
+            <p className="text-xs text-[#64748B] font-semibold uppercase tracking-wide mb-1">Medal Level</p>
+            <p className="text-xl font-black text-[#0F172A]">{medalLevel}</p>
+          </div>
         </div>
-        <div className="bg-emerald-900/20 backdrop-blur-md p-6 rounded-[2.5rem] shadow-xl relative overflow-hidden group border border-emerald-500/30 transition-all hover:bg-emerald-900/30 hover:border-emerald-500/50 animate-in slide-in-from-bottom-4 duration-700 delay-200">
-          <div className="absolute -right-4 -bottom-4 text-7xl opacity-[0.1] rotate-12 group-hover:rotate-0 transition-transform duration-700 grayscale hover:grayscale-0">🔥</div>
-          <p className="text-[9px] text-emerald-200 font-black uppercase tracking-widest mb-2">Consistency</p>
-          <p className="text-4xl font-black text-white tracking-tighter">{stats?.current_streak || 0} <span className="text-[10px] text-emerald-400 font-black uppercase ml-1">Days</span></p>
-        </div>
-      </div>
 
-      <div className="mb-12">
-        {!todayAttendance ? (
-          <div className="space-y-6 animate-in zoom-in duration-700 delay-300">
-            <button
-              onClick={markAttendance}
-              disabled={actionLoading}
-              className="w-full bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 text-white h-60 rounded-[3.5rem] shadow-2xl shadow-emerald-900/50 flex flex-col items-center justify-center transition-all active:scale-[0.96] group relative overflow-hidden border border-white/20 hover:shadow-emerald-500/50 duration-500"
-            >
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
-              {actionLoading ? (
-                <div className="flex flex-col items-center">
-                  <div className="w-14 h-14 border-4 border-white/20 border-t-white rounded-full animate-spin mb-6"></div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-80">Sealing Presence...</span>
+        {/* Attendance Action */}
+        <div className="mb-8">
+          {!todayAttendance ? (
+            <div className="slide-up">
+              {new Date().getHours() >= 0 && new Date().getHours() < 3 ? (
+                <div className="premium-card p-8 text-center border-amber-200 bg-amber-50">
+                  <div className="text-6xl mb-4">😴</div>
+                  <h2 className="text-2xl font-black text-amber-800 mb-2">Rest & Recharge</h2>
+                  <p className="text-amber-700 font-medium mb-4">
+                    Great minds take proper rest! Attendance opens at 3:00 AM.
+                  </p>
+                  <button disabled className="btn bg-amber-200 text-amber-800 font-bold opacity-50 cursor-not-allowed w-full rounded-xl py-3 border border-amber-300">
+                    Sleep Well 🌙
+                  </button>
                 </div>
               ) : (
                 <>
-                  <div className="w-28 h-28 bg-white/20 rounded-full flex items-center justify-center text-6xl mb-5 group-hover:scale-110 transition-transform duration-1000 shadow-inner backdrop-blur-sm">☀️</div>
-                  <span className="text-2xl font-black uppercase tracking-tighter italic drop-shadow-lg">I Am Awake</span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] mt-4 opacity-70">Claim Your Focus</span>
+                  <div className="text-center mb-4">
+                    <p className="text-sm font-bold text-[#64748B] uppercase tracking-wide">
+                      {totalAwakeCount > 0 ? `Join ${totalAwakeCount} Early Birds` : 'Be the First to Rise!'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={markAttendance}
+                    disabled={actionLoading}
+                    className="btn btn-primary btn-lg btn-full gradient-header hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                    style={{ minHeight: '200px', borderRadius: '24px' }}
+                  >
+                    {actionLoading ? (
+                      <div className="flex flex-col items-center">
+                        <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin mb-4"></div>
+                        <span className="text-sm font-bold uppercase tracking-wider">Taking Flight...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-6xl mb-4 backdrop-blur-sm">☀️</div>
+                        <span className="text-2xl font-black uppercase tracking-tight">Wings Up</span>
+                        <span className="text-xs font-semibold uppercase tracking-widest mt-3 opacity-80">Take Flight Today</span>
+                      </div>
+                    )}
+                  </button>
                 </>
               )}
-            </button>
-            <div className="flex items-center justify-center space-x-2 text-[10px] font-black text-emerald-300 uppercase tracking-widest opacity-60">
-              <span className="w-8 h-[1px] bg-emerald-300/30"></span>
-              <span>Morning Ritual</span>
-              <span className="w-8 h-[1px] bg-emerald-300/30"></span>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-5 animate-in slide-in-from-bottom-8 duration-700">
-            <div className="bg-black/30 backdrop-blur-xl border border-emerald-500/20 rounded-[3.5rem] p-10 text-center relative overflow-hidden shadow-2xl">
-              <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
-                <span className="text-[12rem]">🦉</span>
-              </div>
-
-              <div className="text-7xl mb-6 transform hover:scale-110 transition-transform duration-700 drop-shadow-2xl">{dailyBadge.emoji}</div>
-              <h2 className={`text-4xl font-black mb-3 tracking-tighter ${todayAttendance.rank_today === 1 ? 'text-amber-400' :
-                  todayAttendance.rank_today <= 3 ? 'text-emerald-400' :
-                    todayAttendance.rank_today <= 5 ? 'text-teal-400' :
-                      todayAttendance.rank_today <= 10 ? 'text-cyan-400' :
-                        'text-white'
-                }`}>Rank: {getOrdinal(todayAttendance.rank_today)}</h2>
-
-              <div className="mb-8">
-                <p className="text-emerald-200 font-black bg-white/5 py-2 px-5 rounded-full inline-block text-[10px] uppercase tracking-widest border border-white/10 shadow-sm">
-                  Woke before {wokeBeforeCount} {wokeBeforeCount === 1 ? 'seeker' : 'seekers'}
-                </p>
-              </div>
-
-              {todayAttendance.rank_today <= 5 && (
-                <div className="mb-8 animate-bounce">
-                  <div className="text-4xl mb-2">🎉</div>
-                  <p className="text-[10px] font-black text-amber-400 uppercase tracking-widest drop-shadow-sm">
-                    Top 5 Early Bird!
-                  </p>
-                  <p className="text-[8px] text-emerald-200 font-medium uppercase tracking-widest mt-1">
-                    You set the pace today
+          ) : (
+            <div className="slide-up">
+              <div className="premium-card" style={{ borderRadius: '24px', padding: '2rem' }}>
+                <div className="text-center mb-6">
+                  <div className="text-7xl mb-4">✅</div>
+                  <h2 className="text-3xl font-black text-[#0F172A] mb-2">
+                    Wings Up Successful!
+                  </h2>
+                  <p className="text-sm text-[#64748B] font-medium">
+                    {todayAttendance.rank_today - 1} {todayAttendance.rank_today - 1 === 1 ? 'student' : 'students'} started before you today
                   </p>
                 </div>
-              )}
 
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-emerald-900/40 rounded-3xl p-6 shadow-inner border border-emerald-500/20">
-                  <p className="text-[10px] text-emerald-300 font-black uppercase tracking-widest mb-1.5">Energy</p>
-                  <p className="text-2xl font-black text-white">+{todayAttendance.points}</p>
-                </div>
-                <div className="bg-emerald-900/40 rounded-3xl p-6 shadow-inner border border-emerald-500/20">
-                  <p className="text-[10px] text-emerald-300 font-black uppercase tracking-widest mb-1.5">Time</p>
-                  <p className="text-2xl font-black text-white">{new Date(todayAttendance.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-              </div>
+                {todayAttendance.rank_today <= 10 && (
+                  <div className={`mb-6 p-4 rounded-2xl text-center relative overflow-hidden animate-pop ${todayAttendance.rank_today <= 3 ? 'gradient-streak shadow-lg animate-float' : 'bg-gradient-to-r from-amber-100 to-orange-100 border border-amber-200'}`}>
+                    {todayAttendance.rank_today <= 3 && <div className="absolute inset-0 animate-shimmer"></div>}
+                    <div className="text-3xl mb-2 relative z-10">{todayAttendance.rank_today <= 3 ? '🏆' : '🌟'}</div>
+                    <p className={`text-sm font-bold uppercase tracking-wide relative z-10 ${todayAttendance.rank_today <= 3 ? 'text-white' : 'text-amber-800'}`}>
+                      {todayAttendance.rank_today <= 3 ? `Top ${todayAttendance.rank_today} Elite!` : 'Top 10 Achiever!'}
+                    </p>
+                    <p className={`text-xs mt-1 relative z-10 ${todayAttendance.rank_today <= 3 ? 'text-white/90' : 'text-amber-700'}`}>
+                      {todayAttendance.rank_today === 1 ? 'You are leading the pack!' : 'Outstanding dedication!'}
+                    </p>
+                  </div>
+                )}
 
-              <div className="pt-6 border-t border-white/10">
-                <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-2">Focus Status</p>
-                <p className="text-xl font-black text-white uppercase tracking-tighter flex items-center justify-center space-x-2">
-                  <span>{medalLevel === 'Seeker' ? '🌱' : medalLevel === 'Bronze' ? '🥉' : medalLevel === 'Silver' ? '🥈' : medalLevel === 'Gold' ? '🥇' : '🏆'}</span>
-                  <span>{medalLevel} Badge Active</span>
-                </p>
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-[#DCFCE7] rounded-2xl p-4 text-center border border-[#22C55E]/20">
+                    <p className="text-xs text-[#16A34A] font-semibold uppercase tracking-wide mb-1">Points Earned</p>
+                    <p className="text-2xl font-black text-[#0F172A]">+{todayAttendance.points}</p>
+                  </div>
+                  <div className="bg-[#DBEAFE] rounded-2xl p-4 text-center border border-[#2563EB]/20">
+                    <p className="text-xs text-[#1D4ED8] font-semibold uppercase tracking-wide mb-1">Wings Up Time</p>
+                    <p className="text-2xl font-black text-[#0F172A]">
+                      {new Date(todayAttendance.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-[#E2E8F0] text-center">
+                  <p className="text-xs text-[#64748B] font-semibold uppercase tracking-wide mb-2">Badge Level</p>
+                  <p className="text-lg font-black text-[#0F172A]">{medalLevel} ⭐</p>
+                </div>
               </div>
             </div>
+          )}
+        </div>
 
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-3xl p-7 text-center shadow-lg relative group overflow-hidden backdrop-blur-md animate-in slide-in-from-bottom-4 duration-700 delay-100">
-              <div className="absolute -left-4 -top-4 text-7xl opacity-[0.06] group-hover:scale-110 transition-transform duration-1000 text-amber-500">💡</div>
-              <p className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em] mb-4">Zen Wisdom</p>
-              <p className="text-sm font-bold text-amber-100 italic leading-relaxed px-6">
-                "{studyQuote}"
-              </p>
+        {/* Motivational Quote */}
+        <div className="mb-8 slide-up">
+          <div className="premium-card" style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #ECFCCB 100%)', border: 'none', padding: '1.5rem' }}>
+            <div className="flex items-start gap-3">
+              <div className="text-3xl">💡</div>
+              <div>
+                <p className="text-xs font-bold text-[#F59E0B] uppercase tracking-wider mb-2">Daily Motivation</p>
+                <p className="text-sm font-semibold text-[#0F172A] italic leading-relaxed">"{studyQuote}"</p>
+              </div>
             </div>
           </div>
-        )}
-      </div>
-
-      <div className="bg-black/20 backdrop-blur-xl p-8 rounded-[3rem] shadow-lg border border-white/10 mb-6 animate-in slide-in-from-bottom-4 duration-700 delay-300">
-        <div className="flex justify-between items-center mb-8">
-          <h3 className="font-black text-white text-[11px] uppercase tracking-widest">Ascension path</h3>
-          <span className="text-[10px] font-black text-emerald-200 uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded-lg border border-white/10">Best: {stats?.best_streak || 0}D</span>
         </div>
-        <div className="flex justify-between relative px-2">
-          {[3, 7, 15, 30].map((milestone) => {
-            const isReached = (stats?.current_streak || 0) >= milestone;
-            const milestoneMedal = milestone === 3 ? 'bronze' : milestone === 7 ? 'silver' : milestone === 15 ? 'gold' : 'champion';
 
-            return (
-              <div key={milestone} className="flex flex-col items-center z-10">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-xl transition-all duration-1000 transform ${isReached ? `medal-${milestoneMedal} text-white scale-110 rotate-3 border-2 border-white/50` : 'bg-white/5 text-white/20 border border-white/10'}`}>
-                  {milestone === 3 && '🥉'}
-                  {milestone === 7 && '🥈'}
-                  {milestone === 15 && '🥇'}
-                  {milestone === 30 && '🏆'}
+        {/* Streak Milestones */}
+        <div className="premium-card slide-up" style={{ padding: '1.5rem' }}>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-bold text-[#0F172A] text-sm uppercase tracking-wide">Streak Progress</h3>
+            <span className="text-xs font-bold text-[#64748B] bg-[#F1F5F9] px-3 py-1 rounded-full">Best: {stats?.best_streak || 0} Days</span>
+          </div>
+          <div className="flex justify-between items-center relative px-2">
+            {[3, 7, 15, 30].map((milestone) => {
+              const isReached = (stats?.current_streak || 0) >= milestone;
+              return (
+                <div key={milestone} className="flex flex-col items-center z-10">
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl font-bold shadow-md transition-all ${isReached ? 'bg-gradient-to-br from-[#22C55E] to-[#A3E635] text-white scale-110' : 'bg-[#F1F5F9] text-[#94A3B8]'}`}>
+                    {milestone === 3 && '🥉'}
+                    {milestone === 7 && '🥈'}
+                    {milestone === 15 && '🥇'}
+                    {milestone === 30 && '🏆'}
+                  </div>
+                  <span className={`text-xs mt-3 font-bold uppercase tracking-wide ${isReached ? 'text-[#22C55E]' : 'text-[#94A3B8]'}`}>{milestone}D</span>
                 </div>
-                <span className={`text-[10px] mt-4 font-black uppercase tracking-widest transition-colors duration-1000 ${isReached ? 'text-white' : 'text-white/20'}`}>{milestone}D</span>
-              </div>
-            );
-          })}
-          <div className="absolute top-7 left-0 right-0 h-1.5 bg-white/5 -z-0 rounded-full mx-6"></div>
-          <div
-            className="absolute top-7 left-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 -z-0 transition-all duration-1000 rounded-full mx-6 shadow-[0_0_15px_rgba(16,185,129,0.5)]"
-            style={{ width: `calc(${Math.min(100, (stats?.current_streak || 0) / 30 * 100)}% - 48px)` }}
-          ></div>
+              );
+            })}
+            <div className="absolute top-7 left-0 right-0 h-2 bg-[#F1F5F9] -z-0 rounded-full mx-6"></div>
+            <div
+              className="absolute top-7 left-0 h-2 bg-gradient-to-r from-[#22C55E] to-[#A3E635] -z-0 transition-all duration-1000 rounded-full mx-6"
+              style={{ width: `calc(${Math.min(100, (stats?.current_streak || 0) / 30 * 100)}% - 48px)` }}
+            ></div>
+          </div>
         </div>
-        <p className="mt-10 text-center text-[9px] font-black text-emerald-400/50 uppercase tracking-[0.3em] italic">Consistency is the fuel of ZenStudy</p>
       </div>
     </div>
   );

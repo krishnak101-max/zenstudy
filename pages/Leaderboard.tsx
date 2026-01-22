@@ -31,58 +31,83 @@ const Leaderboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-20 text-white animate-in fade-in duration-700">
-      <div className="mb-6 text-center">
-        <h1 className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 tracking-tighter mb-2 italic drop-shadow-sm animate-in slide-in-from-top-4 duration-700">Morning Titans 🏆</h1>
-        <p className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.3em] bg-white/10 inline-block px-4 py-1.5 rounded-full border border-white/10 animate-in slide-in-from-bottom-2 duration-500 delay-200">Top 10 Elite Today</p>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="animate-spin h-12 w-12 border-[4px] border-emerald-500 border-t-transparent rounded-full shadow-2xl shadow-emerald-500/50"></div>
+    <div className="w-full min-h-screen bg-[#F8FAFC] px-4 sm:px-6 lg:px-8 pt-6 pb-24">
+      <div className="max-w-[900px] mx-auto">
+        {/* Header */}
+        <div className="mb-8 text-center fade-in">
+          <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-[#2563EB] to-[#06B6D4] bg-clip-text text-transparent mb-3">
+            Today's Top Performers 🏆
+          </h1>
+          <span className="inline-block badge badge-primary text-xs px-4 py-2">
+            Top 10 Early Birds
+          </span>
         </div>
-      ) : entries.length === 0 ? (
-        <div className="text-center py-24 bg-black/20 backdrop-blur-xl rounded-[3.5rem] border border-white/10 shadow-2xl animate-in zoom-in duration-500">
-          <div className="text-7xl mb-8 animate-pulse grayscale opacity-50">🌌</div>
-          <p className="text-[11px] font-black text-emerald-200 uppercase tracking-[0.2em]">The arena is quiet</p>
-          <p className="text-xs font-bold text-white/40 mt-3 px-10">Will you be the first titan to rise tomorrow?</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {entries.map((entry, index) => {
-            const isTop3 = index < 3;
-            const rankEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : null;
 
-            return (
-              <div
-                key={entry.id}
-                className={`flex items-center p-6 rounded-[2.5rem] border transition-all transform hover:scale-[1.02] active:scale-95 duration-500 animate-in slide-in-from-bottom-4 ${isTop3 ? 'bg-gradient-to-r from-emerald-900/40 to-teal-900/40 border-emerald-500/30 shadow-xl shadow-emerald-500/10' : 'bg-black/20 border-white/10 backdrop-blur-sm'
-                  }`}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="w-14 text-center font-black text-white/20 text-2xl flex items-center justify-center">
-                  {rankEmoji || <span className="text-sm">#{entry.rank_today}</span>}
-                </div>
-                <div className="flex-1 ml-4">
-                  <p className="font-black text-white tracking-tight text-lg leading-tight mb-1">{entry.students.name}</p>
-                  <p className="text-[10px] text-emerald-200 font-black uppercase tracking-widest inline-block bg-white/10 px-2 py-0.5 rounded border border-white/5">{entry.students.batch}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-base font-black text-emerald-400 tabular-nums drop-shadow-sm">{new Date(entry.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  <p className="text-[9px] text-white/30 font-black uppercase tracking-widest mt-1">+{entry.points} Power</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <div className="w-12 h-12 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="premium-card text-center py-16 slide-up">
+            <div className="text-7xl mb-4 opacity-30">�</div>
+            <p className="text-sm font-bold text-[#64748B] uppercase tracking-wide">No Attendance Yet</p>
+            <p className="text-sm text-[#94A3B8] mt-2">Be the first to rise tomorrow!</p>
+          </div>
+        ) : (
+          <div className="space-y-3 slide-up">
+            {entries.map((entry, index) => {
+              const isTop3 = index < 3;
+              const rankColors = [
+                { bg: 'bg-gradient-to-r from-amber-50 to-yellow-50', border: 'border-amber-300', text: 'text-amber-700', medal: '🥇' },
+                { bg: 'bg-gradient-to-r from-gray-50 to-slate-50', border: 'border-gray-300', text: 'text-gray-700', medal: '🥈' },
+                { bg: 'bg-gradient-to-r from-orange-50 to-amber-50', border: 'border-orange-300', text: 'text-orange-700', medal: '🥉' }
+              ];
+              const rankStyle = isTop3 ? rankColors[index] : { bg: 'bg-white', border: 'border-gray-200', text: 'text-gray-600', medal: null };
 
-      <div className="mt-16 p-10 bg-black/20 backdrop-blur-xl rounded-[3.5rem] text-center border border-white/10 shadow-lg relative overflow-hidden animate-in slide-in-from-bottom-8 duration-700 delay-500">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 pointer-events-none"></div>
-        <p className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em] mb-4 relative z-10">Want to see your name here?</p>
-        <p className="text-sm font-bold text-white/60 italic leading-relaxed px-4 relative z-10">
-          "The morning breeze has secrets to tell you. Don't go back to sleep."
-        </p>
+              return (
+                <div
+                  key={entry.id}
+                  className={`premium-card clickable flex items-center gap-4 ${rankStyle.bg} border-2 ${rankStyle.border}`}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {/* Rank Badge */}
+                  <div className="flex-shrink-0 w-16 text-center">
+                    {rankStyle.medal ? (
+                      <span className="text-4xl">{rankStyle.medal}</span>
+                    ) : (
+                      <span className={`text-2xl font-black ${rankStyle.text}`}>#{entry.rank_today}</span>
+                    )}
+                  </div>
+
+                  {/* Student Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-bold text-lg ${rankStyle.text} truncate`}>{entry.students.name}</p>
+                    <span className="badge badge-success text-xs mt-1">{entry.students.batch}</span>
+                  </div>
+
+                  {/* Time & Points */}
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-lg font-black ${rankStyle.text} tabular-nums`}>
+                      {new Date(entry.checkin_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    <p className="text-xs text-[#22C55E] font-bold mt-0.5">+{entry.points} pts</p>
+                  </div>
+                </div>
+              );
+            })}</div>
+        )}
+
+        {/* Motivational Footer */}
+        <div className="mt-12 premium-card slide-up" style={{ background: 'linear-gradient(135deg, #ECFCCB 0%, #DCFCE7 100%)', border: 'none', padding: '1.5rem' }}>
+          <div className="text-center">
+            <p className="text-xs font-bold text-[#16A34A] uppercase tracking-wider mb-2">
+              Want to see your name here?
+            </p>
+            <p className="text-sm font-semibold text-[#0F172A] italic">
+              "The morning breeze has secrets to tell you. Don't go back to sleep."
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
