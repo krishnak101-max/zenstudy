@@ -124,32 +124,46 @@ const Admin: React.FC = () => {
   const exportMonthlyReport = async () => {
     setLoading(true);
     try {
+      console.log('Fetching monthly report data...');
       // Fetch all students with their stats
       const { data: studentsWithStats, error } = await supabase
         .from('students')
         .select(`
-            *,
+            name,
+            batch,
             student_stats (
               total_points,
               medal_level
             )
           `);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase fetch error:', error);
+        throw error;
+      }
 
-      // Flatten the data structure
-      const formattedData = studentsWithStats.map(s => ({
-        name: s.name,
-        batch: s.batch,
-        total_points: s.student_stats?.[0]?.total_points || 0,
-        medal_level: s.student_stats?.[0]?.medal_level || 'Seeker'
-      }));
+      console.log('Raw Data:', studentsWithStats);
+
+      // Flatten the data structure safely
+      const formattedData = studentsWithStats.map((s: any) => {
+        // Handle both array (one-to-many) and object (one-to-one) responses from Supabase
+        const stats = Array.isArray(s.student_stats) ? s.student_stats[0] : s.student_stats;
+
+        return {
+          name: s.name,
+          batch: s.batch,
+          total_points: stats?.total_points || 0,
+          medal_level: stats?.medal_level || 'Seeker'
+        };
+      });
+
+      console.log('Formatted Data for PDF:', formattedData);
 
       generateMonthlyPDF(formattedData);
 
     } catch (error) {
       console.error('Monthly Report Failed:', error);
-      alert('Failed to generate monthly report.');
+      alert('Failed to generate monthly report. See console for details.');
     } finally {
       setLoading(false);
     }

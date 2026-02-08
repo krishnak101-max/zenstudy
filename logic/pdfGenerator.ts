@@ -66,7 +66,7 @@ export const generateMonthlyPDF = (
     doc.setFontSize(14);
     doc.setTextColor(22, 163, 74); // Green-600
     doc.setFont('helvetica', 'bold');
-    doc.text('🌟 TOP 10 LEADERS', 14, currentY);
+    doc.text('TOP 10 LEADERS', 14, currentY);
     currentY += 8;
 
     const top10 = validStudents.slice(0, 10);
@@ -95,7 +95,7 @@ export const generateMonthlyPDF = (
     doc.setFontSize(14);
     doc.setTextColor(71, 85, 105);
     doc.setFont('helvetica', 'bold');
-    doc.text('📊 COMPREHENSIVE RANKING', 14, currentY);
+    doc.text('COMPREHENSIVE RANKING', 14, currentY);
     currentY += 8;
 
     autoTable(doc, {
@@ -103,8 +103,8 @@ export const generateMonthlyPDF = (
         head: [['Rank', 'Student Name', 'Batch', 'Total Points', 'Medal', 'Status']],
         body: validStudents.map((s, index) => {
             let status = 'Active';
-            if (index < 10) status = '🔥 Leader';
-            else if (index >= validStudents.length - 10) status = '⚠️ Needs Focus';
+            if (index < 10) status = 'LEADER';
+            else if (index >= validStudents.length - 10) status = 'NEEDS FOCUS';
 
             return [
                 index + 1,
