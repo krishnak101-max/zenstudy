@@ -71,19 +71,27 @@ const ExamReminder: React.FC = () => {
                                 <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Up Next: Tomorrow</p>
                                 <h4 className="text-sm font-bold text-gray-800">{tomorrowExam.subject}</h4>
                             </div>
-                            <a
-                                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Exam:+${encodeURIComponent(tomorrowExam.subject)}&dates=${tomorrowExam.date.replace(/-/g, '')}T050000Z/${tomorrowExam.date.replace(/-/g, '')}T080000Z&details=Good+luck!+Prepare+well.&sf=true&output=xml`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="ml-auto bg-amber-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full shadow-sm hover:bg-amber-600 transition-colors flex items-center gap-1"
+                            <button
+                                onClick={() => {
+                                    const isAndroid = /Android/i.test(navigator.userAgent);
+                                    if (isAndroid) {
+                                        // Intent to set an alarm for 5:30 AM
+                                        const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;i.hour=5;i.minutes=30;S.message=Exam Preparation: ${tomorrowExam.subject};B.skipUi=true;end`;
+                                        window.location.href = intentUrl;
+                                    } else {
+                                        // Fallback to Google Calendar for non-Android
+                                        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Exam:+${encodeURIComponent(tomorrowExam.subject)}&dates=${tomorrowExam.date.replace(/-/g, '')}T053000Z/${tomorrowExam.date.replace(/-/g, '')}T080000Z&details=Good+luck!+Prepare+well.&sf=true&output=xml`, '_blank');
+                                    }
+                                }}
+                                className="ml-auto bg-amber-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full shadow-sm hover:bg-amber-600 transition-colors flex items-center gap-1 cursor-pointer"
                             >
-                                🔔 Set Alarm
-                            </a>
+                                ⏰ Alarm
+                            </button>
                         </div>
                     )}
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
