@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { getFormattedDate } from '../logic/utils.ts';
+import { setExamAlarm, getExamAlarm } from './AlarmManager.tsx';
 
 const EXAM_SCHEDULE = [
     { date: '2026-02-08', subject: 'Malayalam 2' },
@@ -13,6 +14,7 @@ const EXAM_SCHEDULE = [
 ];
 
 const ExamReminder: React.FC = () => {
+    const [alarmSet, setAlarmSet] = useState(false);
     const today = getFormattedDate(); // YYYY-MM-DD
 
     // Calculate tomorrow's date
@@ -22,6 +24,32 @@ const ExamReminder: React.FC = () => {
 
     const todayExam = EXAM_SCHEDULE.find(e => e.date === today);
     const tomorrowExam = EXAM_SCHEDULE.find(e => e.date === tomorrow);
+
+    useEffect(() => {
+        // Check if alarm is already set for tomorrow
+        if (tomorrowExam) {
+            const stored = getExamAlarm();
+            if (stored && stored.date === tomorrowExam.date && stored.subject === tomorrowExam.subject) {
+                setAlarmSet(true);
+            }
+        }
+    }, [tomorrowExam]);
+
+    const toggleAlarm = () => {
+        if (!tomorrowExam) return;
+
+        if (alarmSet) {
+            // Clear alarm
+            localStorage.removeItem('zenstudy_exam_alarm');
+            setAlarmSet(false);
+            alert('Alarm cancelled 🔕');
+        } else {
+            // Set alarm
+            setExamAlarm(tomorrowExam.date, tomorrowExam.subject);
+            setAlarmSet(true);
+            alert(`⏰ Alarm set for 05:30 AM on ${tomorrowExam.date}!\n\n⚠️ IMPORTANT:\nFor the alarm to ring, you must keep this website OPEN on your device (screen can be off on some devices, but keep tab active if possible).`);
+        }
+    };
 
     if (!todayExam && !tomorrowExam) return null;
 
@@ -72,26 +100,16 @@ const ExamReminder: React.FC = () => {
                                 <h4 className="text-sm font-bold text-gray-800">{tomorrowExam.subject}</h4>
                             </div>
                             <button
-                                onClick={() => {
-                                    const isAndroid = /Android/i.test(navigator.userAgent);
-                                    if (isAndroid) {
-                                        // Intent to set an alarm for 5:30 AM
-                                        const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;i.hour=5;i.minutes=30;S.message=Exam Preparation: ${tomorrowExam.subject};B.skipUi=true;end`;
-                                        window.location.href = intentUrl;
-                                    } else {
-                                        // Fallback to Google Calendar for non-Android
-                                        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Exam:+${encodeURIComponent(tomorrowExam.subject)}&dates=${tomorrowExam.date.replace(/-/g, '')}T053000Z/${tomorrowExam.date.replace(/-/g, '')}T080000Z&details=Good+luck!+Prepare+well.&sf=true&output=xml`, '_blank');
-                                    }
-                                }}
-                                className="ml-auto bg-amber-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full shadow-sm hover:bg-amber-600 transition-colors flex items-center gap-1 cursor-pointer"
+                                onClick={toggleAlarm}
+                                className={`ml-auto text-[10px] font-bold uppercase px-3 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1 cursor-pointer ${alarmSet ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
                             >
-                                ⏰ Alarm
+                                {alarmSet ? '✅ Alarm Set' : '⏰ Set Alarm'}
                             </button>
                         </div>
                     )}
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 };
 

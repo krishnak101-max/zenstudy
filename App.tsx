@@ -5,6 +5,7 @@ import Setup from './pages/Setup.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import Leaderboard from './pages/Leaderboard.tsx';
 import Admin from './pages/Admin.tsx';
+import AlarmManager from './components/AlarmManager.tsx';
 
 const App: React.FC = () => {
   const [studentId, setStudentId] = useState<string | null>(localStorage.getItem('student_id'));
@@ -58,6 +59,7 @@ const App: React.FC = () => {
 
   return (
     <Router>
+      <AlarmManager />
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
         <div className="mx-auto w-full max-w-[1280px] min-h-screen bg-white shadow-lg overflow-x-hidden flex flex-col relative">
           <main className="flex-1 pb-24 relative">
