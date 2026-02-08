@@ -100,7 +100,7 @@ export const generateMonthlyPDF = (
 
     autoTable(doc, {
         startY: currentY,
-        head: [['Rank', 'Student Name', 'Batch', 'Total Points', 'Status']],
+        head: [['Rank', 'Student Name', 'Batch', 'Total Points', 'Medal', 'Status']],
         body: validStudents.map((s, index) => {
             let status = 'Active';
             if (index < 10) status = '🔥 Leader';
@@ -111,6 +111,7 @@ export const generateMonthlyPDF = (
                 s.name || 'Unknown',
                 s.batch || '-',
                 s.total_points || 0,
+                s.medal_level || 'Seeker',
                 status
             ];
         }),
@@ -118,10 +119,14 @@ export const generateMonthlyPDF = (
         headStyles: { fillColor: [71, 85, 105], textColor: 255, fontStyle: 'bold' },
         bodyStyles: { textColor: 70 },
         margin: { left: 14, right: 14 },
+        columnStyles: {
+            3: { fontStyle: 'bold', textColor: [37, 99, 235] }, // Points in Blue
+            5: { fontStyle: 'italic' } // Status
+        },
         didParseCell: function (data) {
             // Highlight bottom 10 students in red text
             if (data.section === 'body' && data.row.index >= validStudents.length - 10) {
-                data.cell.styles.textColor = [220, 38, 38]; // Red
+                if (data.column.index === 5) data.cell.styles.textColor = [220, 38, 38]; // Red
             }
         }
     });
