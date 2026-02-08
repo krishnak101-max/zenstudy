@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { getFormattedDate } from '../logic/utils.ts';
-import { setExamAlarm, getExamAlarm } from './AlarmManager.tsx';
 
 const EXAM_SCHEDULE = [
     { date: '2026-02-08', subject: 'Malayalam 2' },
@@ -14,10 +13,12 @@ const EXAM_SCHEDULE = [
 ];
 
 const ExamReminder: React.FC = () => {
-    const [alarmSet, setAlarmSet] = useState(false);
-    const today = getFormattedDate(); // YYYY-MM-DD
+    const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
+    const [targetExam, setTargetExam] = useState<{ date: string; subject: string } | null>(null);
 
-    // Calculate tomorrow's date
+    const today = getFormattedDate();
+
+    // Calculate tomorrow's date for display logic
     const tomorrowDate = new Date();
     tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrow = getFormattedDate(tomorrowDate);
@@ -26,30 +27,54 @@ const ExamReminder: React.FC = () => {
     const tomorrowExam = EXAM_SCHEDULE.find(e => e.date === tomorrow);
 
     useEffect(() => {
-        // Check if alarm is already set for tomorrow
-        if (tomorrowExam) {
-            const stored = getExamAlarm();
-            if (stored && stored.date === tomorrowExam.date && stored.subject === tomorrowExam.subject) {
-                setAlarmSet(true);
+        const calculateTimeLeft = () => {
+            const now = new Date();
+
+            // Determine target time
+            let target: Date | null = null;
+            let examSubject = '';
+
+            // 1. Check if there is an exam TODAY and if it's before 4:30 AM
+            if (todayExam) {
+                const todayTarget = new Date(`${todayExam.date}T04:30:00`);
+                if (now < todayTarget) {
+                    target = todayTarget;
+                    examSubject = todayExam.subject;
+                }
             }
-        }
-    }, [tomorrowExam]);
 
-    const toggleAlarm = () => {
-        if (!tomorrowExam) return;
+            // 2. If no target yet (past 4:30 AM today OR no exam today), check TOMORROW
+            if (!target && tomorrowExam) {
+                const tomorrowTarget = new Date(`${tomorrowExam.date}T04:30:00`);
+                target = tomorrowTarget;
+                examSubject = tomorrowExam.subject;
+            }
 
-        if (alarmSet) {
-            // Clear alarm
-            localStorage.removeItem('zenstudy_exam_alarm');
-            setAlarmSet(false);
-            alert('Alarm cancelled 🔕');
-        } else {
-            // Set alarm
-            setExamAlarm(tomorrowExam.date, tomorrowExam.subject);
-            setAlarmSet(true);
-            alert(`⏰ Alarm set for 05:30 AM on ${tomorrowExam.date}!\n\n⚠️ IMPORTANT:\nFor the alarm to ring, you must keep this website OPEN on your device (screen can be off on some devices, but keep tab active if possible).`);
-        }
-    };
+            // If still no target (e.g., end of exams), stop
+            if (!target) {
+                setTimeLeft(null);
+                setTargetExam(null);
+                return;
+            }
+
+            setTargetExam({ date: target.toISOString().split('T')[0], subject: examSubject });
+
+            const diff = target.getTime() - now.getTime();
+
+            if (diff > 0) {
+                const hours = Math.floor((diff / (1000 * 60 * 60)));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                setTimeLeft({ hours, minutes, seconds });
+            } else {
+                setTimeLeft(null); // Timer finished or passed
+            }
+        };
+
+        calculateTimeLeft();
+        const timer = setInterval(calculateTimeLeft, 1000);
+        return () => clearInterval(timer);
+    }, [today, todayExam, tomorrowExam]);
 
     if (!todayExam && !tomorrowExam) return null;
 
@@ -61,50 +86,66 @@ const ExamReminder: React.FC = () => {
                 {/* Header Strip */}
                 <div className="bg-gradient-to-r from-red-500 to-amber-500 px-4 py-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span className="text-xl animate-pulse">🔔</span>
-                        <span className="text-sm font-black text-white uppercase tracking-wider text-shadow-sm">Exam Alert</span>
+                        <span className="text-xl animate-pulse">⏳</span>
+                        <span className="text-sm font-black text-white uppercase tracking-wider text-shadow-sm">Exam Countdown</span>
                     </div>
                     <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
-                        Important
+                        04:30 AM Start
                     </span>
                 </div>
 
-                <div className="p-4 space-y-3">
-                    {todayExam ? (
-                        <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-md border-l-4 border-red-500 relative overflow-hidden">
-                            <div className="z-10">
-                                <p className="text-[10px] font-extrabold text-red-500 uppercase tracking-widest mb-1 flex items-center gap-1">
-                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                                    Today's Exam
-                                </p>
-                                <h4 className="text-2xl font-black text-gray-900 leading-none">{todayExam.subject}</h4>
-                                <p className="text-xs text-gray-500 font-medium mt-1">Good luck! You got this! 🚀</p>
-                            </div>
-                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-2xl animate-bounce">
-                                📝
+                <div className="p-4 space-y-4">
+
+                    {/* Main Countdown Display */}
+                    {timeLeft && targetExam ? (
+                        <div className="bg-gray-900 rounded-xl p-4 text-center border-2 border-gray-800 relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-amber-500 to-red-500 animate-shimmer"></div>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2">Time Until {targetExam.subject}</p>
+
+                            <div className="flex justify-center items-end gap-2 text-white">
+                                <div className="flex flex-col">
+                                    <span className="text-3xl font-black tabular-nums leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase mt-1">Hrs</span>
+                                </div>
+                                <span className="text-xl font-bold text-gray-600 mb-2">:</span>
+                                <div className="flex flex-col">
+                                    <span className="text-3xl font-black tabular-nums leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase mt-1">Mins</span>
+                                </div>
+                                <span className="text-xl font-bold text-gray-600 mb-2">:</span>
+                                <div className="flex flex-col">
+                                    <span className="text-3xl font-black tabular-nums leading-none text-red-500">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                                    <span className="text-[9px] text-red-500/70 font-bold uppercase mt-1">Secs</span>
+                                </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="p-3 rounded-lg bg-green-50 border border-green-100 text-center">
-                            <p className="text-xs font-bold text-green-700 uppercase tracking-wide">No Exam Today • Keep Revising! 📚</p>
+                        targetExam === null && todayExam ? (
+                            <div className="bg-green-100 rounded-xl p-4 text-center border border-green-200">
+                                <p className="text-green-800 font-bold text-lg">Exam Time! Good Luck! 🍀</p>
+                            </div>
+                        ) : null
+                    )}
+
+                    {/* Today's Exam Card */}
+                    {todayExam && (
+                        <div className="flex justify-between items-center bg-white p-3 rounded-lg border-l-4 border-red-500 shadow-sm">
+                            <div>
+                                <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-0.5">Today's Exam</p>
+                                <h4 className="text-lg font-black text-gray-900">{todayExam.subject}</h4>
+                            </div>
+                            <div className="text-2xl opacity-80">📝</div>
                         </div>
                     )}
 
+                    {/* Tomorrow's Exam Card */}
                     {tomorrowExam && (
-                        <div className="flex items-center gap-3 bg-amber-100/50 p-3 rounded-lg border border-amber-200/60">
-                            <div className="bg-amber-200 w-8 h-8 rounded-lg flex items-center justify-center text-lg">
-                                📅
-                            </div>
+                        <div className="flex justify-between items-center bg-amber-50 p-3 rounded-lg border border-amber-100">
                             <div>
-                                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Up Next: Tomorrow</p>
+                                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-0.5">Tomorrow</p>
                                 <h4 className="text-sm font-bold text-gray-800">{tomorrowExam.subject}</h4>
                             </div>
-                            <button
-                                onClick={toggleAlarm}
-                                className={`ml-auto text-[10px] font-bold uppercase px-3 py-1.5 rounded-full shadow-sm transition-all flex items-center gap-1 cursor-pointer ${alarmSet ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-amber-500 text-white hover:bg-amber-600'}`}
-                            >
-                                {alarmSet ? '✅ Alarm Set' : '⏰ Set Alarm'}
-                            </button>
+                            <div className="text-xl opacity-60">📅</div>
                         </div>
                     )}
                 </div>
