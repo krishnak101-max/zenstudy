@@ -15,8 +15,126 @@ interface AttendanceRecord {
 }
 
 
+
 // Logic to exclude specific test accounts
-const EXCLUDED_STUDENTS = ['KPS', 'KKR', 'SAL'];
+const EXCLUDED_STUDENTS = ['KPS', 'KKR', 'SAL', 'KRISHNA'];
+
+export const generateMonthlyPDF = (
+    allStudents: any[]
+) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const date = new Date().toLocaleDateString();
+
+    // FILTER DATA: Exclude test accounts
+    const validStudents = allStudents.filter(s =>
+        !EXCLUDED_STUDENTS.some(excluded => s.name?.toUpperCase().includes(excluded))
+    );
+
+    // Sort by Total Points (High to Low)
+    validStudents.sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
+
+    // --- TITLE SECTION ---
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, 40, 'F');
+
+    // Logo / Brand
+    doc.setFontSize(24);
+    doc.setTextColor(37, 99, 235); // Blue-600
+    doc.setFont('helvetica', 'bold');
+    doc.text('ZenStudy', 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // Slate-500
+    doc.setFont('helvetica', 'normal');
+    doc.text('Wings Coaching Centre - Monthly Report', 14, 26);
+
+    // Date Box
+    doc.setFillColor(241, 245, 249); // Slate-100
+    doc.roundedRect(pageWidth - 60, 10, 46, 18, 2, 2, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text('GENERATED ON', pageWidth - 55, 16);
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42); // Slate-900
+    doc.setFont('helvetica', 'bold');
+    doc.text(date, pageWidth - 55, 23);
+
+    let currentY = 45;
+
+    // --- TOP 10 LEADERS ---
+    doc.setFontSize(14);
+    doc.setTextColor(22, 163, 74); // Green-600
+    doc.setFont('helvetica', 'bold');
+    doc.text('🌟 TOP 10 LEADERS', 14, currentY);
+    currentY += 8;
+
+    const top10 = validStudents.slice(0, 10);
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Rank', 'Student Name', 'Batch', 'Total Points', 'Medal']],
+        body: top10.map((s, index) => [
+            `#${index + 1}`,
+            s.name || 'Unknown',
+            s.batch || '-',
+            s.total_points || 0,
+            s.medal_level || 'Seeker'
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        bodyStyles: { textColor: 50, halign: 'center', fontSize: 10, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [240, 253, 244] }, // Green-50
+        margin: { left: 14, right: 14 },
+    });
+
+    // @ts-ignore
+    currentY = doc.lastAutoTable.finalY + 15;
+
+    // --- FULL RANKING LIST ---
+    doc.setFontSize(14);
+    doc.setTextColor(71, 85, 105);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📊 COMPREHENSIVE RANKING', 14, currentY);
+    currentY += 8;
+
+    autoTable(doc, {
+        startY: currentY,
+        head: [['Rank', 'Student Name', 'Batch', 'Total Points', 'Status']],
+        body: validStudents.map((s, index) => {
+            let status = 'Active';
+            if (index < 10) status = '🔥 Leader';
+            else if (index >= validStudents.length - 10) status = '⚠️ Needs Focus';
+
+            return [
+                index + 1,
+                s.name || 'Unknown',
+                s.batch || '-',
+                s.total_points || 0,
+                status
+            ];
+        }),
+        theme: 'striped',
+        headStyles: { fillColor: [71, 85, 105], textColor: 255, fontStyle: 'bold' },
+        bodyStyles: { textColor: 70 },
+        margin: { left: 14, right: 14 },
+        didParseCell: function (data) {
+            // Highlight bottom 10 students in red text
+            if (data.section === 'body' && data.row.index >= validStudents.length - 10) {
+                data.cell.styles.textColor = [220, 38, 38]; // Red
+            }
+        }
+    });
+
+    // @ts-ignore
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Total Students Tracked: ${validStudents.length} | Keep Pushing! 🚀`, 14, finalY);
+
+    doc.save(`ZenStudy_Monthly_Report_${date.replace(/\//g, '-')}.pdf`);
+};
 
 export const generateAttendancePDF = (
     date: string,

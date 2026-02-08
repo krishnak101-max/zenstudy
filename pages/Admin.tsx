@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient.ts';
 import { getFormattedDate } from '../logic/utils.ts';
-import { generateAttendancePDF } from '../logic/pdfGenerator.ts'; // We'll create this helper
+import { generateAttendancePDF, generateMonthlyPDF } from '../logic/pdfGenerator.ts';
 
 const ADMIN_PASSWORD = 'tracker2026';
 
@@ -121,6 +121,40 @@ const Admin: React.FC = () => {
     }
   };
 
+  const exportMonthlyReport = async () => {
+    setLoading(true);
+    try {
+      // Fetch all students with their stats
+      const { data: studentsWithStats, error } = await supabase
+        .from('students')
+        .select(`
+            *,
+            student_stats (
+              total_points,
+              medal_level
+            )
+          `);
+
+      if (error) throw error;
+
+      // Flatten the data structure
+      const formattedData = studentsWithStats.map(s => ({
+        name: s.name,
+        batch: s.batch,
+        total_points: s.student_stats?.[0]?.total_points || 0,
+        medal_level: s.student_stats?.[0]?.medal_level || 'Seeker'
+      }));
+
+      generateMonthlyPDF(formattedData);
+
+    } catch (error) {
+      console.error('Monthly Report Failed:', error);
+      alert('Failed to generate monthly report.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetAllData = async () => {
     if (!window.confirm('⚠️ DANGER ZONE ⚠️\n\nAre you sure you want to delete ALL data? This includes:\n- All students\n- All attendance records\n- All points and stats\n\nThis action CANNOT be undone.')) {
       return;
@@ -189,7 +223,8 @@ const Admin: React.FC = () => {
             <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wide mt-1">Administrative Control</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={exportToPDF} className="btn btn-primary text-xs px-4 py-2">📄 PDF</button>
+            <button onClick={exportToPDF} className="btn btn-primary text-xs px-4 py-2">📄 Daily PDF</button>
+            <button onClick={exportMonthlyReport} className="btn bg-purple-600 hover:bg-purple-700 text-white text-xs px-4 py-2 font-bold transition-all shadow-sm">📊 Monthly Report</button>
             <button onClick={copyToppersToWhatsApp} className="btn btn-success text-xs px-4 py-2">🏆 Top 5</button>
             <button onClick={copyLateToWhatsApp} className="bg-[#F59E0B] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#D97706] transition-all">⚠️ Late</button>
             <button onClick={resetAllData} className="bg-[#EF4444] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#DC2626] transition-all">🗑️ Reset</button>
