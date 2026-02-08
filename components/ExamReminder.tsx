@@ -71,6 +71,14 @@ const ExamReminder: React.FC = () => {
                                 <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Up Next: Tomorrow</p>
                                 <h4 className="text-sm font-bold text-gray-800">{tomorrowExam.subject}</h4>
                             </div>
+                            <a
+                                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Exam:+${encodeURIComponent(tomorrowExam.subject)}&dates=${tomorrowExam.date.replace(/-/g, '')}T050000Z/${tomorrowExam.date.replace(/-/g, '')}T080000Z&details=Good+luck!+Prepare+well.&sf=true&output=xml`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-auto bg-amber-500 text-white text-[10px] font-bold uppercase px-3 py-1.5 rounded-full shadow-sm hover:bg-amber-600 transition-colors flex items-center gap-1"
+                            >
+                                🔔 Set Alarm
+                            </a>
                         </div>
                     )}
                 </div>
