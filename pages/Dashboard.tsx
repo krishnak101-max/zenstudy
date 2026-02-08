@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient.ts';
 import { Student, Attendance, StudentStats } from '../types.ts';
 import { getFormattedDate, calculatePoints } from '../logic/utils.ts';
 import { updateStudentStats } from '../logic/statsUpdater.ts';
+import ExamReminder from '../components/ExamReminder.tsx';
 
 interface DashboardProps {
   studentId: string;
@@ -302,6 +303,9 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
             </div>
           )}
         </div>
+
+        {/* Exam Reminder */}
+        <ExamReminder />
 
         {/* Motivational Quote */}
         <div className="mb-8 slide-up">
