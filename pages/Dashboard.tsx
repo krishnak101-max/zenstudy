@@ -188,6 +188,9 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
           </div>
         </div>
 
+        {/* Exam Reminder - Moved here for visibility */}
+        <ExamReminder />
+
         {/* Stats Grid - Responsive */}
         <div className="stats-grid mb-8 slide-up">
           <div className="premium-card card-stat">
@@ -304,8 +307,6 @@ const Dashboard: React.FC<DashboardProps> = ({ studentId }) => {
           )}
         </div>
 
-        {/* Exam Reminder */}
-        <ExamReminder />
 
         {/* Motivational Quote */}
         <div className="mb-8 slide-up">

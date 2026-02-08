@@ -26,42 +26,54 @@ const ExamReminder: React.FC = () => {
     if (!todayExam && !tomorrowExam) return null;
 
     return (
-        <div className="premium-card slide-up mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="text-3xl">📝</div>
-                <div>
-                    <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight">Exam Schedule</h3>
-                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Stay Prepared!</p>
+        <div className="mb-6 relative group">
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-amber-600 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+            <div className="relative premium-card bg-gradient-to-br from-white to-amber-50 border-amber-200 p-0 overflow-hidden">
+
+                {/* Header Strip */}
+                <div className="bg-gradient-to-r from-red-500 to-amber-500 px-4 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xl animate-pulse">🔔</span>
+                        <span className="text-sm font-black text-white uppercase tracking-wider text-shadow-sm">Exam Alert</span>
+                    </div>
+                    <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
+                        Important
+                    </span>
                 </div>
-            </div>
 
-            <div className="space-y-3">
-                {todayExam ? (
-                    <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-blue-100 relative overflow-hidden group">
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
-                        <div>
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Today's Exam</p>
-                            <h4 className="text-xl font-bold text-gray-900">{todayExam.subject}</h4>
+                <div className="p-4 space-y-3">
+                    {todayExam ? (
+                        <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-md border-l-4 border-red-500 relative overflow-hidden">
+                            <div className="z-10">
+                                <p className="text-[10px] font-extrabold text-red-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                                    Today's Exam
+                                </p>
+                                <h4 className="text-2xl font-black text-gray-900 leading-none">{todayExam.subject}</h4>
+                                <p className="text-xs text-gray-500 font-medium mt-1">Good luck! You got this! 🚀</p>
+                            </div>
+                            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold text-2xl animate-bounce">
+                                📝
+                            </div>
                         </div>
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg group-hover:scale-110 transition-transform">
-                            👇
+                    ) : (
+                        <div className="p-3 rounded-lg bg-green-50 border border-green-100 text-center">
+                            <p className="text-xs font-bold text-green-700 uppercase tracking-wide">No Exam Today • Keep Revising! 📚</p>
                         </div>
-                    </div>
-                ) : (
-                    <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 text-center">
-                        <p className="text-sm font-medium text-blue-700">No exam today. Relax & Revise! 🧘‍♂️</p>
-                    </div>
-                )}
+                    )}
 
-                {tomorrowExam && (
-                    <div className="flex justify-between items-center bg-white/60 p-4 rounded-xl border border-gray-200">
-                        <div>
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Tomorrow</p>
-                            <h4 className="text-lg font-semibold text-gray-700">{tomorrowExam.subject}</h4>
+                    {tomorrowExam && (
+                        <div className="flex items-center gap-3 bg-amber-100/50 p-3 rounded-lg border border-amber-200/60">
+                            <div className="bg-amber-200 w-8 h-8 rounded-lg flex items-center justify-center text-lg">
+                                📅
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Up Next: Tomorrow</p>
+                                <h4 className="text-sm font-bold text-gray-800">{tomorrowExam.subject}</h4>
+                            </div>
                         </div>
-                        <div className="text-2xl opacity-50">📅</div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
